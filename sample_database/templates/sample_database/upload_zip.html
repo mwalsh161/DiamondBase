@@ -1,0 +1,27 @@
+{% extends "sample_database/init.html" %}
+
+{% block title_block %}
+<a href="{% url 'DB:home' %}">Home: </a>
+{% if not parent %}
+Couldn't find parent!
+{% else %}
+Uploading Ziped {{type.name}} to {{parent.action_type.name}} {{parent.id}}
+{% endif %}
+{% endblock title_block %}
+
+{% block content %}
+<div class="row">
+    <div class="small-12 columns">
+        {{prompt}}
+    </div>
+</div>
+<hr>
+<div class="row">
+    <div class="small-8 columns">
+        <form action=# method="POST" enctype="multipart/form-data">{% csrf_token %}
+            {{ form }}
+            <input type="submit" value="Upload"/>
+       </form>
+    </div>
+</div>
+{% endblock content %}

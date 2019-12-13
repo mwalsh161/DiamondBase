@@ -1,0 +1,57 @@
+{% extends "foundation/base.html" %}
+{% load url from future %}
+{% block base_body %}
+
+    <div class="row">
+        <div class="panel">
+            <h4>Welcome to {{LAB_NAME}} Diamond Database</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="small-12 columns">
+        <table>
+            <thead>
+                <tr>
+                    <th width="200"><a href="?order=name">Sample Name</a></th>
+                    <th width="150"><a href="?order=location">Location</a></th>
+                    <th width="150"><a href="?order=date_created">Date Created</a></th>
+                    <th>Notes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if samples %}
+                {% for sample in samples %}
+                <tr>
+                    <td><a href="{% url 'DB:sample' sample.name %}">{{sample.name}}</a></td>
+                    <td>{{sample.location}}</td>
+                    <td>{{sample.date_created|date:"F j, Y"}}</td>
+                    <td>{{sample.notes}}</td>
+                    <td></td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td>No Samples</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <form action="{% url 'DB:home' %}" method="post">{% csrf_token %}
+                        <td>{{form.name}}</td>
+                        <td>{{form.location}}</td>
+                        <td>Now</td>
+                        <td>{{form.notes}}</td>
+                        <td><input type="submit" value="Submit" /></td>
+                    </form>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    </div>
+</body>
+
+{% endblock base_body %}

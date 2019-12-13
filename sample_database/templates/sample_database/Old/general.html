@@ -1,0 +1,89 @@
+{% extends "foundation/base.html" %}
+{% load url from future %}
+{% block base_body %}
+
+<div class="row">
+    <div class="panel">
+        <h4><a href="{% url 'DB:home' %}">Home:</a> <a href="{% url 'DB:sample' sample.name %}">{{sample.name}}:</a> <a href="{% url 'DB:piece' sample.name piece.name %}">{{piece.name}}: </a>{{action.action_type.name}} ({{action.date|date:"F j, Y"}})</h4>
+    </div>
+</div>
+<div class="row">
+    <div class="small-12 columns">
+    <table>
+        <thead>
+            <th width="150"></th>
+            <th></th>
+        </thdead>
+        <tbody>
+        {% for field_name, field_data in fields %}
+            <tr>
+                <td>{{field_name}}:</td>
+                <td>{{field_data}}</td>
+            </tr>
+        {% endfor %}
+            <tr>
+                <td>Notes:</td>
+                <td>{{action.notes}}</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+</div>
+<div class="row">
+    <div class="small-12 columns">
+        <hr>
+    </div>
+</div>
+<div class="row">
+    <div class="small-12 columns">
+        <h5>General Data</h5>
+    </div>
+</div>
+<div class="row">
+    <div class="small-12 columns">
+        <table>
+            <thead>
+                <th width="150"><a href="?order=data_type__name">Type</a></th>
+                <th width="150"><a href="?order=date">Date</a></th>
+                <th>Notes</th>
+            </thead>
+            <tbody>
+            {% for dat, local in data %}
+                <tr>
+                    <td><a href="#" data-dropdown="drop{{dat.id}}">{{dat.data_type.name}}</a></td>
+                    <td>{{dat.date|date:"F j, Y"}}</td>
+                    <td>{{dat.notes}}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td>None</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% for dat, local in data %}
+<div id="drop{{dat.id}}" data-dropdown-content class="f-dropdown content">
+    <a href="#" class="button tiny">Details</a>
+    {% if local %}
+    <h5>Local Data</h5>
+    <table>
+        {% for d in local %}
+        <tr>
+            <td>{{d.data_type.name}}</td>
+            <td>{{d.date|date:"F j, Y"}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No local data</p>
+    {% endif %}
+</div>
+{% endfor %}
+</body>
+
+{% endblock base_body %}

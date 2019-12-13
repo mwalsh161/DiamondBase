@@ -1,0 +1,42 @@
+{% extends "foundation/base.html" %}
+{% load url from future %}
+{% block base_body %}
+
+<div class="row">
+    <div class="panel">
+        <h4><a href="{% url 'DB:home' %}">Home:</a> <a href="{% url 'DB:sample' sample.name %}">{{sample.name}}:</a> {{piece.name}}</h4>
+    </div>
+</div>
+<div class="row">
+    <div class="small-12 columns">
+    <table>
+        <thead>
+            <tr>
+                <th width="200"><a href="?order=action_type__name">Action</a></th>
+                <th width="150"><a href="?order=date">Date</a></th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if actions %}
+            {% for action in actions %}
+            <tr>
+                <td><a href="{% url 'DB:action_details' sample.name piece.name action.id %}">{{action.action_type.name}}</a></td>
+                <td>{{action.date|date:"F j, Y"}}</td>
+                <td>{{action.notes}}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td>No Actions</td>
+                <td></td>
+                <td></td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    </div>
+</div>
+</body>
+    
+{% endblock base_body %}

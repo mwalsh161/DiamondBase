@@ -1,0 +1,79 @@
+{% extends "sample_database/init.html" %}
+
+{% block body_js %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/zf/dt-1.10.12/b-colvis-1.2.2/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/zf/dt-1.10.12/b-colvis-1.2.2/datatables.min.js"></script>
+<script type="text/javascript" class="init">
+$(document).ready(function() {
+    $('#main_table').DataTable({
+        iDisplayLength:25
+    });
+} );
+</script>
+{% endblock body_js %}
+
+{% block title_block %}
+{% for link, tag in title.links %}
+    <a href="{{link}}">{{tag}}: </a>
+{% endfor %}
+{{title.current}}
+{% endblock title_block %}
+
+{% block content %}
+    <div class="row">
+        <div class="small-12 columns">
+        <table id="main_table" class="display"{%if datatables%}{{datatables}}{%endif%}>
+            <thead>
+                <tr>
+                    {% for len, priority, name in table.head %}
+                    <th {% if len %}width="{{len}}"{% endif %}>
+                        {{name}}
+                    </th>
+                    {% endfor %}
+                    {% if form %}
+                    <th></th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for dat in table.data %}
+                <tr>
+                    {% for link, el in dat %}
+                        <td>
+                            {% if link %}<a href="{{ link }}">{% endif %}
+                            {{el}}
+                            {% if link %}</a>{% endif %}
+                        </td>
+                    {% endfor %}
+                    {% if form %}
+                        <td></td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    {% for temp in table.head %}
+                        <td>
+                            {% if forloop.first %}None{% endif %}
+                        </td>
+                    {% endfor %}
+                    {% if form %}
+                        <td></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                {% if form %}
+                <tr>
+                    <form action="#" method="post">{% csrf_token %}
+                        {% for el in form %}
+                        <td>{{el}}</td>
+                        {% endfor %}
+                        <td><input type="submit" value="Submit" /></td>
+                    </form>
+                </tr>
+                {% endif %}
+                {% block extra_line %}{% endblock extra_line%}
+            </tbody>
+        </table>
+    </div>
+    </div>
+{% endblock content %}

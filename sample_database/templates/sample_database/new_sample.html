@@ -1,0 +1,18 @@
+{% extends "sample_database/init.html" %}
+
+{% block title_block %}
+    <a href="{% url 'DB:home' %}">Home:</a> New Sample
+{% endblock title_block %}
+
+{% block content %}
+<div class="row">
+    <div class="small-8 columns">
+        <form action="{% url 'DB:new_sample' %}" method="POST">{% csrf_token %}
+            {{form}}
+            <input type="submit" value="Submit"/>
+        </form>
+    </div>
+</div>
+</body>
+    
+{% endblock content %}

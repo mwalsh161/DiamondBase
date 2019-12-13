@@ -1,0 +1,64 @@
+{% extends "sample_database/base.html" %}
+
+{% block details %}
+{% if sample.name != "None" %}
+<div class="row">
+    <table>
+        <thead></thead>
+        <tbody>
+        <tr><td>Project:</td><td>{{sample.project}}</td></tr>
+        <tr><td>Owner:</td><td>{{sample.owner}}</td></tr>
+        <tr><td>Last Edited By:</td><td>{{sample.last_modified_by}} {% if sample.last_modified %}({{sample.last_modified|date:"F d, Y"}}){% endif %}</td></tr>
+        <tr><td>Location:</td><td>{{sample.location}}</td></tr>
+        <tr><td>Type:</td><td>{{sample.substrate}}</td></tr>
+        <tr><td>Created:</td><td>{{sample.date_created|date:"F d, Y"}}</td</tr>
+        <tr><td>Notes:</td><td>{{sample.notes|linebreaksbr}}</td</tr>
+        <tr><td><a href="{%url 'DB:edit' 'Sample' sample.id %}?cont={{request.get_full_path}}">Edit</a></td</tr>
+    </tbody></table>
+</div>
+<div class="row">
+    <p>{{sample.name}} Map</p>
+</div>
+<div class="row">
+    <form action="#" method="post" enctype="multipart/form-data">{%csrf_token%}
+        <div class="small-4 column">{{upload_form}}</div>
+        {% if maps %}
+        <div class="small-3 column"><input type="submit" value="Add New Map"/></div>
+        {% else %}
+        <div class="small-3 column"><input type="submit" value="Add Map"/></div>
+        {% endif %}
+        <div class="small-5 column">
+        {% if maps %}
+             <ul class="clearing-thumbs clearing-feature" data-clearing>
+             {% for map in maps.reverse %}
+                 {% if forloop.first %}
+                      {{map.date_created|date:"F d, Y"}}
+                      <li class="clearing-featured-img"><a href="{{map.file.url}}"><img data-caption="{{map.date_created|date:"F d, Y"}}: {{map.notes}}" src="{{map.get_thumbnail_url}}"></a></li>
+                 {% else %}
+                      <li><a href="{{map.file.url}}"><img data-caption="{{map.date_created|date:"F d, Y"}}: {{map.notes}}" src="{{map.get_thumbnail_url}}"></a></li>
+                 {% endif %}
+            {% endfor %}
+            </ul>
+            </div>
+            <div class="row"><p>{{map.date_created|date:"F d, Y"}}</p>
+        {% endif %}
+        </div>
+    </form>
+</div>
+{% endif %}
+{% endblock details %}
+
+{% block extra_line %}
+<tr> 
+    {% for temp in table.head %}
+        {% if forloop.first %}
+        <td>
+            <a href="{{new_url}}" class="tiny radius button">Add Piece</a>
+        </td>
+        {% else %}
+        <td></td>
+        {% endif %}
+    {% endfor %}
+</tr>
+{% endblock extra_line %}
+

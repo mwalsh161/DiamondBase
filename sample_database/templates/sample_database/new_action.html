@@ -1,0 +1,58 @@
+{% extends "sample_database/init.html" %}
+{% block body_js %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/zf/dt-1.10.12/b-colvis-1.2.2/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/zf/dt-1.10.12/b-colvis-1.2.2/datatables.min.js"></script>
+<script type="text/javascript" class="init">
+$(document).ready(function() {
+    var table = $('#new_action').DataTable({
+        "order":false,
+        "paging":false,
+        "scrollY":500,
+        "scrollCollapse":true
+    });
+    $('#form').submit(function () {
+            // Force all the rows back onto the DOM for postback
+        table.search("");
+        table.draw();
+      //  table.rows().nodes().page.len(-1).draw();  // This is needed
+      //  if ($(this).valid()) {
+      //      return true;
+      //  }
+    });
+} );
+</script>
+{% endblock body_js %}
+
+
+{% block title_block %}
+<a href="{% url 'DB:home' %}">Home:</a> New {{a_type.name}}
+{% endblock title_block %}
+
+{% block content %}
+<div class="row">
+    <div class="small-8 columns">
+        <form id="form" action="{% url 'DB:new_action' a_type.name%}" method="POST">{% csrf_token %}
+            {% for field in form_props %}
+                {{field.errors}}
+                {{field.label_tag}} {{field.field}}
+            {% endfor %}
+            <table id="new_action" class="display">
+                <thead>
+                    <tr><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for field in form_samples %}
+                        <tr><td>
+                        {{field.errors}}
+                        {{field.label_tag}} {{field.field}}
+                        </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+</body>
+    
+{% endblock content %}

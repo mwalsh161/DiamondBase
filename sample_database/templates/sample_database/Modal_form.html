@@ -1,0 +1,37 @@
+{% extends "sample_database/details.html" %}
+
+{% block extra_line %}
+<tr>
+    {% for temp in table.head %}
+        {% if forloop.first %}
+            <td><a href="#" data-dropdown="drop" data-options="is_hover:true" class="tiny radius button dropdown">New</a><br>
+                <ul id="drop" data-dropdown-content class="f-dropdown">
+                {% for type in data_types %}
+                <li><a href="#" data-reveal-id="Modal{{forloop.counter}}" >{{type.name}}</a></li>
+                {% empty %}
+                    <li><a href="/admin/">Make some as admin</a></li>
+                {% endfor %}
+                </ul>
+            </td>
+        {% else %}
+            <td></td>
+        {% endif %}
+    {% endfor %}
+</tr>
+{% endblock extra_line %}
+
+{% block helper_divs %}
+{% for type_name, form in modal_form %}
+<div id="Modal{{forloop.counter}}" class="reveal-modal" data-reveal>
+    <h4>{{type_name}}</h4>
+    {% if add_zip %}
+    <p align="right"><a href="{% url "DB:upload_zip" type_name action.id %}?next={{ request.path }}">Add Zip File</a></p>
+    {% endif %}
+    <hr>
+    <form action="#" method="POST" enctype="multipart/form-data">{% csrf_token %}
+        {{form}}
+        <input type="submit" value="Submit"/>
+    </form>
+</div>
+{% endfor %}
+{% endblock helper_divs %}

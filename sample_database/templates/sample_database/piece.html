@@ -1,0 +1,47 @@
+{% extends "sample_database/base.html" %}
+
+{% block details %}
+{% if piece.parent %}
+<div class="row">
+    <p>Parent: <a href="{% url 'DB:piece' piece.parent.sample.name piece.parent.name %}">{{piece.parent}}</a></p>
+</div>
+{% endif %}
+{% if piece.piece_set.all %}
+<div class="row">
+    <p>Children:
+    {% for p in piece.piece_set.all %}
+        <a href="{% url 'DB:piece' p.sample.name p.name %}">{{p}}</a>
+        {% if not forloop.last %}
+            &#8226 
+        {% endif %}
+    {% endfor %}
+    </p>
+</div>
+{% endif %}
+<div class = "row">
+    <div class="small-4 column">
+    {% if piece.get_maps %}
+        <ul class="clearing-thumbs clearing-feature" data-clearing>
+        {% for map in piece.get_maps %}
+            {% if not map.image_file %}
+                <p>Error - no image file associated with Map File object</p>
+            {% else %}
+            {% if forloop.first %}
+            {{map.date|date:"F d, Y"}}
+            <li class="clearing-featured-img"><a href="{{map.image_file.url}}"><img data-caption="{{map.date|date:"F d, Y"}}: {{map.notes}}" src="{{map.get_thumbnail_url}}"></a></li>
+            {% else %}
+                <li><a href="{{map.image_file.url}}"><img data-caption="{{map.date|date:"F d, Y"}}: {{map.notes}}" src="{{map.image_file.url}}"></a></li>
+            {% endif %}
+            {% endif %}
+        {% endfor %}
+        </ul>
+        <hr>
+    {%else%}
+        <p>No Maps Uploaded (Go to Created, and add Map File)</p>
+    {%endif%}
+    </div>
+    <div class="small-4 large-7 column">
+        <p>Notes: {{piece.get_notes}}</p>
+    </div>
+</div>
+{% endblock details %}

@@ -1,0 +1,87 @@
+{% extends "sample_database/base.html" %}
+{% load extras %}
+{% block details %}
+{% if obj.owner %}
+<div class="row">
+<div class="small-12 columns">
+owner: {{obj.owner}}
+</div>
+</div>
+{% endif %}
+{% if obj.last_modified_by %}
+<div class="row">
+<div class="small-12 columns">
+Last modified by: {{obj.last_modified_by}} {% if obj.last_modified %}({{obj.last_modified|date:"F d, Y"}}){% endif %}
+</div>
+</div>
+{% endif %}
+{% if other_pieces %}
+<div class="row">
+<div class="small-12 columns">
+    Other pieces associated with this action: 
+    {% for p in other_pieces %}
+        <a href="{{p.url}}">{{p}}</a>
+        {% if not forloop.last %}
+        &#8226 
+        {% endif %}
+    {% endfor %}
+</div>
+</div>
+{% endif %}
+{% if fields %}
+<div class="row">
+    {% if file %}<div class="small-5 columns">
+    {% else %}<div class="small-12 columns">
+    {% endif %}
+    <table>
+        <thead>
+            <th>{% if detail_col1 %}{{detail_col1}}{% endif %}</th>
+            <th>{% if detail_col2 %}{{detail_col2}}{% endif %}</th>
+        </thead>
+        <tbody>
+        {% for field_name, field_data in fields %}
+            <tr>
+                <td>
+                    {% if field_name|length == 2 %}
+                        <a href={{field_name.1}}>{{field_name.0}}:</a>
+                    {% else %}
+                        {{field_name}}:
+                    {% endif %}
+                </td>
+                <td>{{field_data}}</td>
+            </tr>
+        {% endfor %}
+        {% if obj %}
+            <tr>
+            <td>
+                <a href="{% url 'DB:edit' obj|to_class_name obj.id %}?cont={{request.get_full_path}}">edit</a><br>
+                <a href="{% url 'DB:delete' obj|to_class_name obj.id %}">delete</a>
+            </td>
+            <td></td>
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+    </div>
+    <div class="small-7 columns">
+        <div class="row">
+        {% if file %}
+        <a class='th' href="{{file.url}}">
+            <img src="{{file.url}}">
+        </a>
+        {% endif %}
+        </div>
+        <div class="row">
+        <p>
+            {% if raw %}
+                Raw Data: <a href="{{raw.url}}">{{raw}}</a>
+            {% else %}
+                {% if file %}
+                    No Raw Data.
+                {% endif %}
+            {% endif %}
+        </p></div>
+    </div>
+</div>
+{% endif %}
+{% endblock details %}

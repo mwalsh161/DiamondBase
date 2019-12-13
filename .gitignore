@@ -1,0 +1,28 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Django Stuff
+.env
+*.txt
+*.log
+*.sqlite3
+DB/
+# Static can be generated using manage.py collectstatic
+/static/
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+
+# Temporary VIM files
+*~
+*.swp
+*.swo
+
+# vscode
+.vscode/
