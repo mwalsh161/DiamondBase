@@ -3,7 +3,7 @@ from django.http import JsonResponse, HttpResponseForbidden, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone, dateparse
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 import hmac, hashlib, json, re, traceback, datetime
 
 from slack.models import acidclean, failed_regex_strings

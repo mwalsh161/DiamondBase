@@ -1,7 +1,7 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from django.contrib.auth.views import login
+from django.contrib.auth import views as auth_views
 import os
 from django.contrib import admin
 admin.autodiscover()
@@ -18,18 +18,16 @@ def my_redirect(name):
         return HttpResponse('Machine exists, but either shutdown or error with client.') 
     return HttpResponseRedirect('http://%s'%cpu.ip)
 
-urlpatterns = patterns('',
-    url(r'^admin/', include(admin.site.urls),name='admin'),
-    url(r'^about/', include('about.urls', namespace='about')),
-    url(r'^DB/', include('sample_database.urls',namespace='DB')),
-    url(r'^IP/', include('ip_tracker.urls',namespace='IP')),
-    url(r'^slack/', include('slack.urls',namespace='slack')),
-    url(r'^login/', login, name='login'),
+urlpatterns = [
+    url(r'^admin/', admin.site.urls,name='admin'),
+    url(r'^about/', include(('about.urls', 'about'), namespace='about')),
+    url(r'^DB/', include(('sample_database.urls', 'DB'), namespace='DB')),
+    url(r'^IP/', include(('ip_tracker.urls', 'IP'), namespace='IP')),
+    url(r'^slack/', include(('slack.urls', 'slack'), namespace='slack')),
+    url(r'^login/', auth_views.LoginView.as_view(), name='login'),
     url(r'^$',lambda r: HttpResponseRedirect('DB/')),
     url(r'^%s(?P<path>.*)$'%settings.MEDIA_URL[1:],views.media_xsendfile)
-)
+]
 
-if settings.DEBUG:
-    urlpatterns += patterns("django.views",
-                            url(r"%s(?P<path>.*)$" % settings.MEDIA_URL[1:], "static.serve", {"document_root": settings.MEDIA_ROOT,})
-                            )
+#if settings.DEBUG:
+#    urlpatterns += url(r"%s(?P<path>.*)$" % settings.MEDIA_URL[1:], "static.serve", {"document_root": settings.MEDIA_ROOT,})

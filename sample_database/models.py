@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 import os, datetime, image_util
@@ -86,7 +86,7 @@ class Design_Item(models.Model):
     notes= models.TextField(max_length=5000,blank=True)
 
 class Design_Object_Attachment(models.Model):
-    design_object = models.ForeignKey(Design_Item)
+    design_object = models.ForeignKey(Design_Item, on_delete=models.CASCADE)
     notes = models.TextField(max_length=5000,blank=True)
     file = models.FileField(upload_to='diamond_base/design/attachments',blank=True)
     date = models.DateTimeField(auto_now_add=True)
@@ -124,7 +124,7 @@ class Sample(models.Model):
         super(Sample,self).delete(*args,**kwargs)
 
 class SampleMap(models.Model):
-    sample = models.ForeignKey(Sample)
+    sample = models.ForeignKey(Sample, on_delete=models.SET_NULL)
     file = models.FileField(upload_to='diamond_base/SampleMap')
     date_created = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(max_length=5000,blank=True)
@@ -152,7 +152,7 @@ class SampleMap(models.Model):
 
 class Piece(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
-    sample = models.ForeignKey(Sample)
+    sample = models.ForeignKey(Sample, on_delete=models.PROTECT)
     name = models.CharField(max_length=50)
     design = models.ForeignKey(Design,on_delete=models.PROTECT)
     gone = models.BooleanField(default=False)
@@ -223,7 +223,7 @@ class Action_Type(models.Model):
 
 class Action(models.Model):
     pieces = models.ManyToManyField(Piece)
-    action_type = models.ForeignKey(Action_Type)
+    action_type = models.ForeignKey(Action_Type, on_delete=models.CASCADE)
     fields = models.TextField(max_length=500,blank=True)
     date = models.DateTimeField(auto_now_add=False)
     owner = models.ForeignKey(User,null=True,on_delete=models.SET_NULL)
@@ -335,11 +335,11 @@ class Data(models.Model):
         super(Data, self).save(*args,**kwargs)   #Need to save first so file is uploaded
         #Convert TIFF formats to PNG (only for image_file)
         im_path = ''
-	try:
+        try:
             im_path = self.image_file.path
             new_path = image_util.check_and_replace_TIFF(im_path,delete=True)
-	except (IOError,ValueError):
-	    new_path = im_path
+        except (IOError,ValueError):
+            new_path = im_path
         if im_path!=new_path:
             #Update the name part of the field (not full path)
             im_name = os.path.splitext(self.image_file.name)[0]
@@ -363,7 +363,7 @@ class Data(models.Model):
 
 class General(Data):
 #Note 2 foreign keys (1 from Data)
-    parent = models.ForeignKey(Action)
+    parent = models.ForeignKey(Action, on_delete=models.CASCADE)
     xmin = models.FloatField(blank=True)
     xmax = models.FloatField(blank=True)
     ymin = models.FloatField(blank=True)
@@ -375,7 +375,7 @@ class General(Data):
 
 class Local(Data):
 #Note 2 foreign keys (1 from Data)
-    parent = models.ForeignKey(General)
+    parent = models.ForeignKey(General, on_delete=models.CASCADE)
     x = models.FloatField()
     y = models.FloatField()
 
@@ -385,7 +385,7 @@ class Local(Data):
 
 class Local_Attachment(Data):
 #Note 2 foreign keys (1 from Data)
-    parent = models.ForeignKey(Local)
+    parent = models.ForeignKey(Local, on_delete=models.CASCADE)
 
 
 

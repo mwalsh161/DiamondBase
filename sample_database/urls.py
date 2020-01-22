@@ -1,8 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from sample_database import views
 
-urlpatterns = patterns('',
+urlpatterns = [
            url(r'^$', views.index, name='home'),
            url(r'^upload_zip/(?P<type>([^\/]+))/(?P<parent_id>[0-9]+)/$',views.upload_zip,name='upload_zip'),
            url(r'^new_sample/$',views.newSample, name='new_sample'),
@@ -16,6 +16,6 @@ urlpatterns = patterns('',
            url(r'^(?P<sample>([^\/]+))/(?P<piece>([^\/]+))/general_dat(?P<generalID>([^\/]+))/$', views.generalDetails ,name='general_details'),
            url(r'^(?P<sample>([^\/]+))/(?P<piece>([^\/]+))/local_dat(?P<localID>([^\/]+))/$', views.localDetails ,name='local_details'),
            url(r'^(?P<sample>([^\/]+))/(?P<piece>([^\/]+))/attachment(?P<attachID>([^\/]+))/$', views.attachDetails ,name='attach_details')
-            )
+]
 
 ##Modify to use something like "slugs" by adding a slugify function to views, and only look for a match at the beginning of url

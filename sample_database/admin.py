@@ -1,6 +1,6 @@
 from sample_database.models import *
 from django.contrib import admin
-from django.core import urlresolvers
+#from django.core import urlresolvers
 from django.contrib.auth.models import User
 
 #Hide slug fields

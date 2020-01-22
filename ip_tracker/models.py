@@ -1,5 +1,5 @@
 from django.db import models
-from django.core import urlresolvers
+#from django.core import urlresolvers
 from django.utils import timezone
 import os, datetime
 

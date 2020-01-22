@@ -2,7 +2,7 @@ from django.http import HttpResponseRedirect
 from django.conf import settings
 from re import compile
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 
 def get_login_url():

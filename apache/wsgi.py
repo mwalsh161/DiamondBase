@@ -12,6 +12,7 @@ import os, sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.insert(0,BASE_DIR)
+sys.path.append('/var/www/DiamondBase/sample_database')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "DiamondBase.settings")
 
 from django.core.wsgi import get_wsgi_application
