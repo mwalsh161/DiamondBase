@@ -48,7 +48,7 @@ INSTALLED_APPS = (
     'custom_middleware'
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,16 +57,27 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'custom_middleware.middleware.LoginRequiredMiddleware',
 )
-TEMPLATE_CONTEXT_PROCESSORS=("django.contrib.auth.context_processors.auth",
-                             "django.core.context_processors.debug",
-                             "django.core.context_processors.i18n",
-                             "django.core.context_processors.media",
-                             "django.core.context_processors.static",
-                             "django.core.context_processors.tz",
-                             "django.contrib.messages.context_processors.messages",
-                             "django.core.context_processors.request",
-                             "sample_database.context_processors.action_types",
-                             "sample_database.context_processors.lab_name")
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                "django.contrib.auth.context_processors.auth",
+                 "django.template.context_processors.debug",
+                 "django.template.context_processors.i18n",
+                 "django.template.context_processors.media",
+                 "django.template.context_processors.static",
+                 "django.template.context_processors.tz",
+                 "django.contrib.messages.context_processors.messages",
+                 "django.template.context_processors.request",
+                 "sample_database.context_processors.action_types",
+                 "sample_database.context_processors.lab_name"
+            ],
+        },
+    },
+]
 
 ROOT_URLCONF = 'DiamondBase.urls'
 
@@ -101,3 +112,4 @@ MEDIA_URL = '/media/'
 # MEDIA_ROOT defined in .env
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'static/')
+#STATICFILES_DIRS = (os.path.join(PROJECT_ROOT_PATH, 'static/'),)

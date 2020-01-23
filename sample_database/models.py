@@ -124,7 +124,7 @@ class Sample(models.Model):
         super(Sample,self).delete(*args,**kwargs)
 
 class SampleMap(models.Model):
-    sample = models.ForeignKey(Sample, on_delete=models.SET_NULL)
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
     file = models.FileField(upload_to='diamond_base/SampleMap')
     date_created = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(max_length=5000,blank=True)

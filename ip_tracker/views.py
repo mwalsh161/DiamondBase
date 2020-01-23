@@ -39,6 +39,6 @@ def index(request):
     #Prepare html
     context=RequestContext(request,{'action_types':action_types,
                                     'title':title,
-                                    'table':table})
+                                    'table':table}).flatten()
     return render(request,'sample_database/base.html',context)
 

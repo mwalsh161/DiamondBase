@@ -26,7 +26,7 @@ urlpatterns = [
     url(r'^slack/', include(('slack.urls', 'slack'), namespace='slack')),
     url(r'^login/', auth_views.LoginView.as_view(), name='login'),
     url(r'^$',lambda r: HttpResponseRedirect('DB/')),
-    url(r'^%s(?P<path>.*)$'%settings.MEDIA_URL[1:],views.media_xsendfile)
+    url(r'^%s(?P<path>.*)$'%settings.MEDIA_URL[1:],views.media_xsendfile),
 ]
 
 #if settings.DEBUG:

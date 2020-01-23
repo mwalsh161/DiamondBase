@@ -148,7 +148,7 @@ def index(request):
                                     'table':table,
                                     'datatables':datatables,
                                     'fields':fields,
-                                    'detail_col1':detail_title})
+                                    'detail_col1':detail_title}).flatten()
     return render(request,'sample_database/details.html',context)
 
 
@@ -166,7 +166,7 @@ def newSample(request):
     form=SampleForm()
     form.fields["owner"].queryset = User.objects.filter(is_staff=True).order_by('first_name')
     context = RequestContext(request,{'form':form,
-                                      'error':error,})
+                                      'error':error,}).flatten()
     return render(request,'sample_database/new_sample.html',context)
 
 def sample(request,sample):
@@ -223,7 +223,7 @@ def sample(request,sample):
                              'maps':sample_maps,
                              'error':error,
                              'datatables':datatables,
-                             'sample':sample})
+                             'sample':sample}).flatten()
     return render(request,'sample_database/sample.html',context)
 
 def newPiece(request,sample):
@@ -241,7 +241,7 @@ def newPiece(request,sample):
     context = RequestContext(request,{'error':error,
                                       'sample':sample,
                                       'form':form,
-                                      })
+                                      }).flatten()
     return render(request,'sample_database/new_piece.html',context)
 
 def piece(request,sample,piece):
@@ -282,7 +282,7 @@ def piece(request,sample,piece):
                              'table':table,
                              'piece':p,
                              'datatables':datatables,
-                             'sample':s})
+                             'sample':s}).flatten()
     return render(request,'sample_database/piece.html',context)
 
 def actionDetails(request,sample,piece,actionID):
@@ -365,7 +365,7 @@ def actionDetails(request,sample,piece,actionID):
                              'data_types':data_types,
                              'error':error,
                              'obj':a,
-                             'add_zip':True})
+                             'add_zip':True}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
 def generalDetails(request,sample,piece,generalID):
@@ -445,7 +445,7 @@ def generalDetails(request,sample,piece,generalID):
                              'error':error,
                              'raw':g.raw_data,
                              'file':g.image_file,
-                             'obj':g})
+                             'obj':g}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
 def localDetails(request,sample,piece,localID):
@@ -525,7 +525,7 @@ def localDetails(request,sample,piece,localID):
                              'error':error,
                              'raw':l.raw_data,
                              'file':l.image_file,
-                             'obj':l})
+                             'obj':l}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
 def attachDetails(request,sample,piece,attachID):
@@ -556,7 +556,7 @@ def attachDetails(request,sample,piece,attachID):
                              'fields':fields,
                              'raw':att.raw_data,
                              'file':att.image_file,
-                             'obj':att})
+                             'obj':att}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
 def newAction(request,action_type):
@@ -585,7 +585,7 @@ def newAction(request,action_type):
             if len(new_action.pieces.all())<1:
                 new_action.delete()
                 error = 'An action requires 1 or more pieces!'
-                context = RequestContext(request,{'error':error,'form':form,'a_type':a_type})
+                context = RequestContext(request,{'error':error,'form':form,'a_type':a_type}).flatten()
                 return render(request,'sample_database/new_action.html',context)
             return redirect('DB:home')
         else:
@@ -604,7 +604,7 @@ def newAction(request,action_type):
             form_samples.append(temp)
         else:
             form_props.append(temp)
-    context = RequestContext(request,{'error':error,'form_props':form_props,'form_samples':form_samples,'a_type':a_type})
+    context = RequestContext(request,{'error':error,'form_props':form_props,'form_samples':form_samples,'a_type':a_type}).flatten()
     return render(request,'sample_database/new_action.html',context)
 
 def edit(request,type,id):
@@ -640,7 +640,7 @@ def edit(request,type,id):
                                       'type':type,
                                       'caller':'Edit',
                                       'prompt':prompt,
-                                      'edit_form':form})
+                                      'edit_form':form}).flatten()
     return render(request,'sample_database/edit.html',context)
 
 def delete(request,type,id):
@@ -677,7 +677,7 @@ def delete(request,type,id):
                                       'error':error,
                                       'type':type,
                                       'caller':caller,
-                                      'prompt':SafeString(prompt)})
+                                      'prompt':SafeString(prompt)}).flatten()
     return render(request,'sample_database/edit.html',context)
 
 def upload_zip(request,type,parent_id):
@@ -702,6 +702,6 @@ def upload_zip(request,type,parent_id):
                                       'type':type,
                                       'error':error,
                                       'form':form,
-                                      'prompt':SafeString(prompt)})
+                                      'prompt':SafeString(prompt)}).flatten()
     return render(request,'sample_database/upload_zip.html',context)
 
