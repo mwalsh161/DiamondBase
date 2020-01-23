@@ -45,7 +45,7 @@ INSTALLED_APPS = (
     'foundation',
     'slack',
     'about',
-    'custom_middleware'
+    'login_required'
 )
 
 MIDDLEWARE = (
@@ -53,9 +53,9 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'login_required.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'custom_middleware.middleware.LoginRequiredMiddleware',
 )
 TEMPLATES = [
     {
@@ -64,7 +64,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                "django.contrib.auth.context_processors.auth",
+                 "django.contrib.auth.context_processors.auth",
                  "django.template.context_processors.debug",
                  "django.template.context_processors.i18n",
                  "django.template.context_processors.media",
@@ -83,11 +83,22 @@ ROOT_URLCONF = 'DiamondBase.urls'
 
 WSGI_APPLICATION = 'DiamondBase.wsgi.application'
 
+LOGIN_URL = '/login/'
+
 LOGIN_URL_NAME = 'login'
 
 LOGIN_EXEMPT_URLS = (
     r'^slack/',
 )
+
+LOGIN_REDIRECT_URL = '/'
+
+LOGOUT_REDIRECT_URL = '/'
+
+LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
+    'login',
+    'logout'
+]
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
