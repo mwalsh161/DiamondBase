@@ -12,6 +12,7 @@ class edit_Action(ModelForm):
     class Meta:
         model=Action
         exclude=['action_type','pieces','last_modified','last_modified_by']
+
 class edit_General(ModelForm):
     class Meta:
         model=General
@@ -68,9 +69,9 @@ class SampleForm(ModelForm):
         instance = super(SampleForm,self).save(*args,**kwargs)
         instance.save()
         # Create two default side pieces
-        des = Design.objects.get(name='Bulk Diamond')
-        small = Piece(sample=instance,name='smallside',design=des).save()
-        big = Piece(sample=instance,name='bigside',design=des).save()
+#        des = Design.objects.get(name='Bulk Diamond')
+#        small = Piece(sample=instance,name='smallside',design=des).save()
+#        big = Piece(sample=instance,name='bigside',design=des).save()
         return instance
 
 class PieceForm(ModelForm):
@@ -81,7 +82,7 @@ class PieceForm(ModelForm):
 
     def init(self,*args,**kwargs):
         super(PieceForm,self).__init__(*args,**kwargs)
-        self.fields.keyOrder=['name','design','notes','parent']
+        self.order_fields(['name','design','notes','parent'])
     
 class lostForm(ModelForm):
     class Meta:
@@ -97,7 +98,7 @@ class ActionForm(forms.Form):
         for sample in Sample.objects.order_by('-id'):
             if sample.piece_set.count() > 0:
                 self.fields[sample.name]=forms.ModelMultipleChoiceField(help_text='sample',widget=ModularMultipleChoice,queryset=sample.piece_set.filter(gone=False).order_by('-id'),required=False)
-        self.fields.keyOrder=[el.name for el in Sample.objects.order_by('-id') if el.piece_set.count()>0]+fields+['date','notes']
+        self.order_fields([el.name for el in Sample.objects.order_by('-id') if el.piece_set.count()>0]+fields+['date','notes'])
     notes=forms.CharField(widget=forms.Textarea,required=False)
     date=forms.DateTimeField(required=True,initial=timezone.localtime(timezone.now()))
 
@@ -124,7 +125,7 @@ class GeneralDataForm(DataForm):
         super(DataForm,self).__init__(*args, **kwargs)
         for field in fields:
             self.fields[field]=forms.CharField()
-        self.fields.keyOrder=['data_type']+fields+['image_file','raw_data','xmin','xmax','ymin','ymax','notes']
+        self.order_fields(['data_type']+fields+['image_file','raw_data','xmin','xmax','ymin','ymax','notes'])
     xmin=forms.FloatField(initial=0)
     xmax=forms.FloatField(initial=0)
     ymin=forms.FloatField(initial=0)
@@ -135,7 +136,7 @@ class LocalDataForm(DataForm):
         super(DataForm,self).__init__(*args, **kwargs)
         for field in fields:
             self.fields[field]=forms.CharField()
-        self.fields.keyOrder=['data_type']+fields+['image_file','raw_data','x','y','notes']
+        self.order_fields(['data_type']+fields+['image_file','raw_data','x','y','notes'])
     x=forms.FloatField()
     y=forms.FloatField()
 
@@ -144,7 +145,7 @@ class AttachmentForm(DataForm):
         super(DataForm,self).__init__(*args, **kwargs)
         for field in fields:
             self.fields[field]=forms.CharField()
-        self.fields.keyOrder=['data_type']+fields+['image_file','raw_data','notes']
+        self.order_fields(['data_type']+fields+['image_file','raw_data','notes'])
 
 class ZipForm(forms.Form):
     zip_file = forms.FileField(required=True)

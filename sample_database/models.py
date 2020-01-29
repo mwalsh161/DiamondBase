@@ -30,6 +30,9 @@ class Project(models.Model):
     supervisor = models.ForeignKey(User,null=True,on_delete=models.PROTECT)
     notes = models.TextField(max_length=5000,blank=True)
 
+    def __str__(self):
+        return self.name
+
     def save(self,*args,**kwargs):
         if not self.id:
             self.slug = slugify(self.name)
@@ -41,6 +44,10 @@ class Project(models.Model):
 class Location(models.Model):
     slug = models.SlugField(help_text="Appears in URLS")
     name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
     class Meta:
         ordering = ('name',)
 
@@ -55,6 +62,10 @@ class Location(models.Model):
 class Substrate(models.Model):
     slug = models.SlugField()
     name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
     class Meta:
         ordering = ('name',)
 
@@ -72,6 +83,10 @@ class Design(models.Model):
     vector_file = models.FileField(upload_to='diamond_base/design',blank=True)
     image_file = models.FileField(upload_to='diamond_base/design',blank=True)
     design_items = models.ManyToManyField('Design_Item',blank=True)
+
+    def __str__(self):
+        return self.name
+
     class Meta:
         ordering = ('name',)
 
@@ -85,6 +100,9 @@ class Design_Item(models.Model):
     name = models.CharField(max_length=50)
     notes= models.TextField(max_length=5000,blank=True)
 
+    def __str__(self):
+        return self.name
+
 class Design_Object_Attachment(models.Model):
     design_object = models.ForeignKey(Design_Item, on_delete=models.CASCADE)
     notes = models.TextField(max_length=5000,blank=True)
@@ -92,6 +110,9 @@ class Design_Object_Attachment(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
+        return self.file
+
+    def __str__(self):
         return self.file
 
 class Sample(models.Model):
@@ -106,6 +127,9 @@ class Sample(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(max_length=5000,blank=True)
     
+    def __str__(self):
+        return self.__unicode__()
+
     def __unicode__(self):
         return u'%s (%s)'%(self.name,self.location)
 
@@ -156,8 +180,11 @@ class Piece(models.Model):
     name = models.CharField(max_length=50)
     design = models.ForeignKey(Design,on_delete=models.PROTECT)
     gone = models.BooleanField(default=False)
-    parent = models.ForeignKey('Piece',blank=True,null=True,on_delete=models.PROTECT)   #If a piece breaks
+    parent = models.ForeignKey('Piece',blank=True,null=True,on_delete=models.CASCADE)   #If a piece breaks
     date_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.__unicode__()
 
     def url(self):
         return reverse('DB:piece',args=[self.sample.name,self.name])
@@ -204,6 +231,10 @@ class Action_Type(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
     name = models.CharField(max_length=50,help_text="For example: Create, Experiment, Processing")
     field_names = models.TextField('Field names',max_length=500,help_text='Fields that will be in all of this type (other than date/notes).  Spearate items by a newline.  Limited to 500 characters.',blank=True)
+ 
+    def __str__(self):
+        return self.__unicode__()
+ 
     class Meta:
         ordering = ('name',)
         verbose_name='Action Type'
@@ -260,6 +291,9 @@ class Action(models.Model):
  
     def __unicode__(self):
         return u'%s'%self.action_type.name
+
+    def __str__(self):
+        return self.__unicode__()
  
 ####################################################################################
 ####################################################################################
@@ -277,7 +311,10 @@ class Data_Type(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
     name = models.CharField(max_length=50,help_text="For example: SEM, Whitelight, Spectrum, Confocal, Resonant Analysis, Map")
     field_names = models.TextField('Field names',max_length=500,help_text='Fields that will be in all of this type (other than date/notes).  Spearate items by a newline.  Limited to 500 characters.',blank=True)
-    
+   
+    def __str__(self):
+        return self.__unicode__()
+
     def __unicode__(self):
         fields = str(self.field_names).splitlines()
         length = len([el for el in fields if len(el)>0])
@@ -357,6 +394,9 @@ class Data(models.Model):
         action.save()
 
     def __unicode__(self):
+        return self.data_type.name
+
+    def __str__(self):
         return self.data_type.name
 
 ####################################################################################

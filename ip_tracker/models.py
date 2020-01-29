@@ -13,6 +13,9 @@ class Computer(models.Model):
     def __unicode__(self):
         return u'%s: %s'%(self.name,self.ip)
 
+    def __str__(self):
+        return self.__unicode__()
+
     def save(self,*args,**kwargs):
         self.date_modified=timezone.now()
         super(Computer,self).save(*args,**kwargs)

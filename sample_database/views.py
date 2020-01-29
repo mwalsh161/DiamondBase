@@ -599,7 +599,7 @@ def newAction(request,action_type):
         temp = {'errors':field.errors,
                 'help_text':field.help_text,
                 'label_tag':field.label_tag(),
-                'field':field.__unicode__()}
+                'field':field.__str__()}
         if field.help_text == 'sample':
             form_samples.append(temp)
         else:
@@ -608,8 +608,9 @@ def newAction(request,action_type):
     return render(request,'sample_database/new_action.html',context)
 
 def edit(request,type,id):
-    prompt="Changes are permanent (under construction)"
-#    action_types=Action_Type.objects.filter(~Q(name='Created'))
+#    prompt="Changes are permanent (under construction)"
+    prompt=''
+    action_types=Action_Type.objects.filter(~Q(name='Created'))
     editable=['Piece','Sample','Action','General','Local','Local_Attachment']
     error=False
     obj=False
