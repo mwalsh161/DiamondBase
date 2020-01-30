@@ -47,6 +47,13 @@ $('#id_date').datetimepicker({
                 <li>
                     <a href={% url 'DB:new_sample' %}>New Sample</a>
                 </li>
+                <li class="has-dropdown">
+                    <a href="#" class="">Sample Designs</a>
+                    <ul class="dropdown">
+                        <li><a href="{% url 'DB:design' %}">Designs</a></li>
+			<li><a href="{% url 'DB:design_item' %}">Design Items</a></li>
+                    </ul>
+                </li>
                 <!--<li>
                     <a href="{% url 'IP:home' %}">IP Tracker</a>
 		</li>-->

@@ -71,9 +71,12 @@ def format_recent(item):
         label= "%s (%s)"%(item,', '.join(samples))
         date = item.last_modified.strftime('%B %d, %Y %I:%M %p')
     else:
-        link = '/admin/sample_database/design/'+str(item.id)
+        link = reverse('DB:design') + '?edit=' + str(item.id)
         label= item.name
-        date = item.designattach_set.order_by('-date')[0].date.strftime('%B %d, %Y %I:%M %p')
+        attachments = Design_Object_Attachment.objects.filter(design_object__design__id=item.id).order_by('-date')
+        date = ''
+        if len(attachments) > 0:
+            date = attachments[0].date.strftime('%B %d, %Y %I:%M %p')
     if len(item.notes)>50:
         notes = item.notes[0:50]+'...'
     else: notes=item.notes
@@ -81,8 +84,11 @@ def format_recent(item):
     return [[label,link],date]
 def format_data_hover(data,label):
     if data.image_file!='':
-        content = format_html("<img max-width:512 src={0}><p>{1}</p>",data.get_thumbnail_url(),data.raw_data.name)
-    elif data.raw_data=='':
+        if hasattr(data, 'raw_data'):
+            content = format_html("<img max-width:512 src={0}><p>{1}</p>",data.get_thumbnail_url(),data.raw_data.name)
+        else:
+            content = format_html("<img max-width:512 src={0}>",data.get_thumbnail_url())
+    elif not hasattr(data, 'raw_data') or data.raw_data=='':
         content = 'No image or data files.'
     else:
         content = data.raw_data.name
@@ -127,20 +133,25 @@ def index(request):
     #Also display updates to Designs 
     actions=Action.objects.order_by('-last_modified')
     designs=Design.objects.exclude(design_items=None).order_by('-design_items__design_object_attachment__date')
+    
     #Need to order both of these: Using the fact that they are already ordered to speed things up!
     fields=[]
     while len(fields) < 5 and (len(actions)!=0 or len(designs)!=0):
+        if len(designs) > 0:
+            attachments = Design_Object_Attachment.objects.filter(design_object__design__id=designs[0].id).order_by('-date')
+
         if len(designs)==0 and len(actions)!=0:
             fields.append(format_recent(actions[0]))
             actions=actions[1:]
         elif len(actions)==0 and len(designs)!=0:
             fields.append(format_recent(designs[0]))
             designs=designs[1:]
-        elif actions[0].last_modified > designs[0].designattach_set.order_by('-date')[0].date:
+        elif len(attachments) > 0 and actions[0].last_modified > attachments[0].date:
             fields.append(format_recent(actions[0]))
             actions=actions[1:]
         else:
-            fields.append(format_recent(designs[0]))
+            if len(attachments) > 0:
+                fields.append(format_recent(designs[0]))
             designs=designs[1:]
     detail_title='Recent Activity (Pieces and Designs)'
    #Prepare html
@@ -151,6 +162,78 @@ def index(request):
                                     'detail_col1':detail_title}).flatten()
     return render(request,'sample_database/details.html',context)
 
+def design(request):
+    if request.method == 'POST':
+        if request.POST.__contains__('new'):
+            new_item = Design(name='New Design', notes='', vector_file='', image_file='')
+            new_item.save()
+
+            return redirect(reverse('DB:edit', args=['Design', new_item.id]) + '?cont=' + reverse('DB:design'))
+
+    #Init
+    order_by = request.GET.get('order', 'name')
+    items = Design.objects.all().order_by(order_by)
+    
+    #Prepare Data
+    datatables = SafeString('''data-order='[[ 0, "desc" ]]' ''')
+    table_head = [(200,True,'Name'),
+                 ('',False,'Notes'),
+                 ('',False,'')]
+
+    #Create Table
+    table_data = []
+    for item in items:
+        label = item.name
+        this_url = reverse('DB:design')
+        edit_url = reverse('DB:edit', args=['Design', item.id])
+        del_url = reverse('DB:delete', args=['Design', item.id])
+        html = format_html('<a href="{1}?cont={0}">edit</a><br><a href="{2}?cont={0}">delete</a>', this_url, edit_url, del_url)
+        table_data.append([[False, format_data_hover(item, label)],
+                          [False, newlines(item.notes)],
+                          [False, html]])
+    table = Table(table_head, table_data)
+
+    #Prepare html
+    context = RequestContext(request,{'table':table,
+                             'datatables':datatables}).flatten()
+
+    return render(request, 'sample_database/edit_design.html', context)
+
+def design_item(request):
+    if request.method == 'POST':
+        if request.POST.__contains__('new'):
+            new_item = Design_Item(name='New Design Item', notes='')
+            new_item.save()
+
+            return redirect(reverse('DB:edit', args=['Design_Item', new_item.id]) + '?cont=' + reverse('DB:design_item'))
+
+    #Init
+    order_by = request.GET.get('order', 'name')
+    items = Design_Item.objects.all().order_by(order_by)
+    
+    #Prepare Data
+    datatables = SafeString('''data-order='[[ 0, "desc" ]]' ''')
+    table_head = [(200,True,'Name'),
+                 ('',False,'Notes'),
+                 ('',False,'')]
+
+    #Create Table
+    table_data = []
+    for item in items:
+        label = item.name
+        this_url = reverse('DB:design_item')
+        edit_url = reverse('DB:edit', args=['Design_Item', item.id])
+        del_url = reverse('DB:delete', args=['Design_Item', item.id])
+        html = format_html('<a href="{1}?cont={0}">edit</a><br><a href="{2}?cont={0}">delete</a>', this_url, edit_url, del_url)
+        table_data.append([[False, label],
+                          [False, newlines(item.notes)],
+                          [False, html]])
+    table = Table(table_head, table_data)
+
+    #Prepare html
+    context = RequestContext(request,{'table':table,
+                             'datatables':datatables}).flatten()
+    return render(request, 'sample_database/edit_design_item.html', context)
 
 def newSample(request):
     error = False
@@ -611,7 +694,7 @@ def edit(request,type,id):
 #    prompt="Changes are permanent (under construction)"
     prompt=''
     action_types=Action_Type.objects.filter(~Q(name='Created'))
-    editable=['Piece','Sample','Action','General','Local','Local_Attachment']
+    editable=['Piece','Sample','Action','General','Local','Local_Attachment','Design','Design_Item']
     error=False
     obj=False
     form=''
@@ -627,6 +710,8 @@ def edit(request,type,id):
             fields=[el for el in obj.action_type.field_names.splitlines() if len(el)>0]
         elif type == 'Sample':
             form.fields["owner"].queryset = User.objects.filter(is_staff=True).order_by('first_name')
+        elif type == 'Design' or type == 'Design_Item':
+            fields = []
         elif type != 'Sample' and type != 'Piece':
             fields=[el for el in obj.data_type.field_names.splitlines() if len(el)>0]
         if not error and request.POST:
@@ -638,7 +723,7 @@ def edit(request,type,id):
     context = RequestContext(request,{'obj':obj,
                                       'obj_fields':fields,
                                       'error':error,
-                                      'type':type,
+                                      'type':type.replace("_", " "),
                                       'caller':'Edit',
                                       'prompt':prompt,
                                       'edit_form':form}).flatten()
@@ -649,19 +734,30 @@ def delete(request,type,id):
     obj=False
     form=''
     prompt=''
-    editable=['Sample','Piece','Action','General','Local','Local_Attachment']
+    editable=['Sample','Piece','Action','General','Local','Local_Attachment','Design','Design_Item']
     caller='Delete'
     if type not in editable:
         error = "%s not editable or does not exist"%type
-    if type=='Action' or type=='Sample':
+    if type=='Action' or type=='Sample' or type=='Design' or type=='Design_Item':
         if type=='Action':name= eval(type+".objects.get(id=%s)"%id).action_type.name
-        if type=='Sample':name= eval(type+".objects.get(id=%s)"%id).name
+        if type=='Sample' or type=='Design' or type=='Design_Item':name= eval(type+".objects.get(id=%s)"%id).name
         if name=='None' or name=='Created':
             error="%s %s is not deletable"%(type,name)
     if not error:
         obj=eval(type+".objects.get(id=%s)"%id)
         if request.POST:
-            obj.delete()
+            try:
+                obj.delete()
+            except models.ProtectedError:
+                error="%s %s is not deletable since it is in usage by another object"%(type,name)
+                context = RequestContext(request,{'obj':obj,
+                                      'error':error,
+                                      'type':type.replace("_", " "),
+                                      'caller':caller,
+                                      'prompt':SafeString(prompt)}).flatten()
+                return render(request,'sample_database/edit.html',context)
+
+
             continue_url = request.GET.get('cont')
             if continue_url:
                 return redirect(continue_url)
@@ -676,7 +772,7 @@ def delete(request,type,id):
             prompt="Are you sure you want to delete this and %i direct children?<br><br><b>The action is permanent!</b>"%direct
     context = RequestContext(request,{'obj':obj,
                                       'error':error,
-                                      'type':type,
+                                      'type':type.replace("_", " "),
                                       'caller':caller,
                                       'prompt':SafeString(prompt)}).flatten()
     return render(request,'sample_database/edit.html',context)

@@ -5,7 +5,7 @@
 {% if not obj %}
 Error with {{caller}}
 {% else %}
-{{caller }} {{type}} {{obj}}
+{{caller }} {{type}} "{{obj}}"
 {% endif %}
 {% endblock title_block %}
 
@@ -14,7 +14,7 @@ Error with {{caller}}
     <div class="small-12 columns">
         {{prompt}}
     </div>
-    {% if caller == "Edit" %}
+    {% if caller == "Edit" and obj_fields|length %}
     <div class="small-12 columns">
         <br><br>
         Field Names:

@@ -12,7 +12,14 @@ class edit_Action(ModelForm):
     class Meta:
         model=Action
         exclude=['action_type','pieces','last_modified','last_modified_by']
-
+class edit_Design(ModelForm):
+    class Meta:
+        model=Design
+        exclude=['data_type', 'image_file', 'vector_file']
+class edit_Design_Item(ModelForm):
+    class Meta:
+        model=Design_Item
+        exclude=['data_type']
 class edit_General(ModelForm):
     class Meta:
         model=General

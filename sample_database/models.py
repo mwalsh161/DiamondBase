@@ -96,6 +96,15 @@ class Design(models.Model):
     def __unicode__(self):
         return self.name
 
+    def get_thumbnail_url(self):
+        #Returns thumbnail if exists, otherwise returns regular image
+        file_path = self.image_file.path
+        thumb_path = os.path.splitext(file_path)[0]+'-th.png'   #Note image_util always saves png format
+        if os.path.isfile(thumb_path):
+            return os.path.splitext(self.image_file.url)[0]+'-th.png'
+        return self.image_file.url
+
+
 class Design_Item(models.Model):
     name = models.CharField(max_length=50)
     notes= models.TextField(max_length=5000,blank=True)
@@ -370,23 +379,26 @@ class Data(models.Model):
 
     def save(self, *args, **kwargs):
         super(Data, self).save(*args,**kwargs)   #Need to save first so file is uploaded
-        #Convert TIFF formats to PNG (only for image_file)
-        im_path = ''
-        try:
-            im_path = self.image_file.path
-            new_path = image_util.check_and_replace_TIFF(im_path,delete=True)
-        except (IOError,ValueError):
-            new_path = im_path
-        if im_path!=new_path:
-            #Update the name part of the field (not full path)
-            im_name = os.path.splitext(self.image_file.name)[0]
-            self.image_file = im_name+'.png'
-        super(Data, self).save(*args,**kwargs)
-        #Add a thumbnail if size is too big! Note, you could add it no matter what, but this saves space. Template just needs to agree
-        try:  #Permission denied if SSH...
-            image_util.thumbnail(new_path)
-        except IOError:
-            pass
+
+        if self.image_file.name != None:
+            #Convert TIFF formats to PNG (only for image_file)
+            im_path = ''
+            try:
+                im_path = self.image_file.path
+                new_path = image_util.check_and_replace_TIFF(im_path,delete=True)
+            except (IOError,ValueError):
+                new_path = im_path
+            if im_path!=new_path:
+                #Update the name part of the field (not full path)
+                im_name = os.path.splitext(self.image_file.name)[0]
+                self.image_file = im_name+'.png'
+            super(Data, self).save(*args,**kwargs)
+            #Add a thumbnail if size is too big! Note, you could add it no matter what, but this saves space. Template just needs to agree
+            try:  #Permission denied if SSH...
+                image_util.thumbnail(new_path)
+            except IOError:
+                pass
+
         action = self
         while type(action)!=Action:
             action=action.parent
