@@ -114,15 +114,16 @@ class Design_Item(models.Model):
 
 class Design_Object_Attachment(models.Model):
     design_object = models.ForeignKey(Design_Item, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
     notes = models.TextField(max_length=5000,blank=True)
     file = models.FileField(upload_to='diamond_base/design/attachments',blank=True)
     date = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
-        return self.file
+        return self.name
 
     def __str__(self):
-        return self.file
+        return self.name
 
 class Sample(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")

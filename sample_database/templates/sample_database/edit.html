@@ -1,5 +1,14 @@
 {% extends "sample_database/init.html" %}
 
+{% block css %}
+{{ block.super }}
+<style>
+        #id_design_items {
+		                min-height: 300px;
+				        }
+</style>
+{% endblock css %}
+
 {% block title_block %}
 <a href="{% url 'DB:home' %}">Home: </a>
 {% if not obj %}
@@ -32,7 +41,7 @@ Error with {{caller}}
 <br><br>
 <div class="row">
     <div class="small-12 columns">
-        <form method="post">{% csrf_token %}
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
         {% for field in edit_form %}
             {{field.errors}}
             {{field.label_tag}}{{ field }}<br>

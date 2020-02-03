@@ -15,11 +15,15 @@ class edit_Action(ModelForm):
 class edit_Design(ModelForm):
     class Meta:
         model=Design
-        exclude=['data_type', 'image_file', 'vector_file']
+        exclude=['data_type']
 class edit_Design_Item(ModelForm):
     class Meta:
         model=Design_Item
         exclude=['data_type']
+class edit_Design_Object_Attachment(ModelForm):
+    class Meta:
+        model=Design_Object_Attachment
+        exclude=['data_type', 'date']
 class edit_General(ModelForm):
     class Meta:
         model=General

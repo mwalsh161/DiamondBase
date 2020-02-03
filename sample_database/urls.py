@@ -11,6 +11,7 @@ urlpatterns = [
            url(r'^(?P<sample>([^\/]+))/new_piece/$', views.newPiece, name='new_piece'),
            url(r'^new_(?P<action_type>([^\/]+))/$', views.newAction, name='new_action'),
            url(r'^design_item/$', views.design_item, name='design_item'),
+           url(r'^design_item/(?P<design_itemID>([^\/]+))/$', views.design_item_detail, name='design_item_detail'),
            url(r'^design/$', views.design, name='design'),
            url(r'^(?P<sample>([^\/]+))/$', views.sample ,name='sample'),
            url(r'^(?P<sample>([^\/]+))/(?P<piece>([^\/]+))/$', views.piece ,name='piece'),
