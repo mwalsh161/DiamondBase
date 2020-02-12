@@ -2,12 +2,12 @@
 
 {% block title_block %}
     <a href="{% url 'DB:home' %}">Home: </a>
-    <a href="{% url 'DB:sample' sample.name %}">{{sample.name}}: </a>
+    <a href="{% url 'DB:sample' sample.id %}">{{sample.name}}: </a>
     New Piece
 {% endblock title_block %}
 
 {% block content %}
-<form action="{% url 'DB:new_piece' sample.name %}" method="POST">{% csrf_token %}
+<form action="{% url 'DB:new_piece' sample.id %}" method="POST">{% csrf_token %}
     <div class="row">
         <div class="small-5 columns">
             <tr><th>Name:</th><td>{{form.name}}</td></tr>

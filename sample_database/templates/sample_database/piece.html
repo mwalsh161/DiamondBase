@@ -3,14 +3,14 @@
 {% block details %}
 {% if piece.parent %}
 <div class="row">
-    <p>Parent: <a href="{% url 'DB:piece' piece.parent.sample.name piece.parent.name %}">{{piece.parent}}</a></p>
+    <p>Parent: <a href="{% url 'DB:piece' piece.parent.sample.id piece.parent.id %}">{{piece.parent}}</a></p>
 </div>
 {% endif %}
 {% if piece.piece_set.all %}
 <div class="row">
     <p>Children:
     {% for p in piece.piece_set.all %}
-        <a href="{% url 'DB:piece' p.sample.name p.name %}">{{p}}</a>
+        <a href="{% url 'DB:piece' p.sample.id p.id %}">{{p}}</a>
         {% if not forloop.last %}
             &#8226 
         {% endif %}

@@ -34,8 +34,9 @@ $(document).ready(function() {
     <div class="small-8 columns">
         <form id="form" action="{% url 'DB:new_action' a_type.name%}" method="POST">{% csrf_token %}
             {% for field in form_props %}
-                {{field.errors}}
-                {{field.label_tag}} {{field.field}}
+		<b>{{field.help_text}}</b>
+	    	{{field.label_tag}} {{field.field}}
+		{{field.errors}}
             {% endfor %}
             <table id="new_action" class="display">
                 <thead>
@@ -44,8 +45,8 @@ $(document).ready(function() {
                 <tbody>
                     {% for field in form_samples %}
                         <tr><td>
-                        {{field.errors}}
-                        {{field.label_tag}} {{field.field}}
+		    	{{field.label_tag}} {{field.field}}
+			{{field.errors}}
                         </td></tr>
                     {% endfor %}
                 </tbody>

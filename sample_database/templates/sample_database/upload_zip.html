@@ -5,7 +5,7 @@
 {% if not parent %}
 Couldn't find parent!
 {% else %}
-Uploading Ziped {{type.name}} to {{parent.action_type.name}} {{parent.id}}
+Uploading ziped {{type.name}} to {{parent.action_type.name}} {{parent.id}}
 {% endif %}
 {% endblock title_block %}
 
@@ -19,7 +19,15 @@ Uploading Ziped {{type.name}} to {{parent.action_type.name}} {{parent.id}}
 <div class="row">
     <div class="small-8 columns">
         <form action=# method="POST" enctype="multipart/form-data">{% csrf_token %}
-            {{ form }}
+		{% for field in form %}
+			{% if not field.is_hidden %}
+				<b>{{field.help_text}}</b>
+				{{field.label_tag}} {{field}}
+				{{field.errors}}
+			{% else %}
+				{{field}}
+			{% endif %}
+		{% endfor %}
             <input type="submit" value="Upload"/>
        </form>
     </div>

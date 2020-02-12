@@ -58,7 +58,7 @@ def find(f,seq):
         index+=1
 def format_recent(item):
     if type(item)==Action:
-        link = reverse('DB:action_details',args=[item.pieces.all()[0].sample.name,item.pieces.all()[0].name,item.id])
+        link = reverse('DB:action_details',args=[item.pieces.all()[0].sample.id, item.pieces.all()[0].id, item.id])
         if item.action_type.name == 'Created':
             target = item.pieces.all()[0]
             samples = ['%s: %s'%(target.sample.name,target.name)]
@@ -123,7 +123,7 @@ def index(request):
         elif len(piece_preview)==0:
             piece_preview = ['No Pieces']
         piece_preview="<br>".join(piece_preview)
-        table_data.append([[reverse('DB:sample',args=[sample.name]),format_html('<span data-tooltip data-options="disable_for_touch:true" class="has-tip-bottom" title="{0}">{1}</span>',piece_preview,sample.name)],
+        table_data.append([[reverse('DB:sample', args=[sample.id]), format_html('<span data-tooltip data-options="disable_for_touch:true" class="has-tip-bottom" title="{0}">{1}</span>', piece_preview, sample.name)],
                           [False,sample.project],
                           [False,sample.location],
                           [False,sample.substrate],
@@ -293,7 +293,7 @@ def newSample(request):
             sample = form.save(commit=False)
             sample.last_modified_by = request.user
             sample.save()
-            return redirect('DB:sample',sample=sample.name)
+            return redirect('DB:sample', sample = sample.id)
         else:
             error = form.errors
     form=SampleForm()
@@ -302,11 +302,12 @@ def newSample(request):
                                       'error':error,}).flatten()
     return render(request,'sample_database/new_sample.html',context)
 
-def sample(request,sample):
+def sample(request, sampleID):
     #Init
     order_by = request.GET.get('order', 'name')
-    title=Title([(reverse('DB:home'),'Home')],sample)
-    sample = Sample.objects.get(name=sample)
+    sample = Sample.objects.get(id = sampleID)
+    title=Title([(reverse('DB:home'),'Home')],sample.name)
+
     error=False
     if request.method == 'POST':
         form=MapForm(request.POST,request.FILES)
@@ -318,7 +319,7 @@ def sample(request,sample):
         else:
             error = 'Not Valid Entry'
     sample_maps = sample.samplemap_set.order_by('date_created')
-    new_piece_url = reverse('DB:new_piece',args=[sample.name])
+    new_piece_url = reverse('DB:new_piece', args=[sample.id])
     #Prepare Data
     pieces = sample.piece_set.order_by('gone',order_by)
     datatables = SafeString('''data-order='[[ 2, "desc" ]]' ''')
@@ -340,7 +341,7 @@ def sample(request,sample):
             map = format_html('<img src={0}>',map_url)
         else:
             map = 'No map files'
-        table_data.append([[reverse('DB:piece',args=[sample.name,piece.name]),format_html('<span data-tooltip class="has-tip-top" data-options="disable_for_touch:true" title="{0}">{1}</span>',map,piece.name)],
+        table_data.append([[reverse('DB:piece', args=[sample.id, piece.id]), format_html('<span data-tooltip class="has-tip-top" data-options="disable_for_touch:true" title="{0}">{1}</span>',map,piece.name)],
                            [False,format_html('<span data-tooltip class="has-tip" title="{0}">{1}</span>',newlines(piece.design.notes), piece.design.name)],
                            [False,piece.date_created.strftime('%B %d, %Y')],
                            [False,str(piece.gone)],
@@ -359,15 +360,15 @@ def sample(request,sample):
                              'sample':sample}).flatten()
     return render(request,'sample_database/sample.html',context)
 
-def newPiece(request,sample):
+def newPiece(request, sampleID):
     error = False
-    sample = Sample.objects.get(name=sample)
+    sample = Sample.objects.get(id = sampleID)
     if request.method=='POST':
         form = PieceForm(request.POST,instance=Piece(sample=sample))
         if form.is_valid():
             piece = form.save()
             create = piece.action_set.get(action_type__name = 'Created')
-            return redirect('DB:action_details',sample.name,piece.name,create.id)
+            return redirect('DB:action_details', sample.id, piece.id, create.id)
         else:
             error = form.errors
     form=PieceForm()
@@ -377,14 +378,14 @@ def newPiece(request,sample):
                                       }).flatten()
     return render(request,'sample_database/new_piece.html',context)
 
-def piece(request,sample,piece):
+def piece(request, sampleID, pieceID):
     #Init
     order_by = request.GET.get('order', 'date')
-    s = Sample.objects.get(name=sample)
+    s = Sample.objects.get(id = sampleID)
+    p = s.piece_set.get(id = pieceID)
     title=Title([(reverse('DB:home'),'Home'),
-                 (reverse('DB:sample',args=[s.name]),s.name)],piece)
+                 (reverse('DB:sample', args=[s.id]), s.name)], p.name)
     #Prepare Data
-    p = s.piece_set.get(name=piece)
     actions = p.action_set.all().order_by(order_by)
     datatables = SafeString('''data-order='[[ 1, "desc" ]]' ''')
     table_head=[(200,False,'Action'),
@@ -405,7 +406,7 @@ def piece(request,sample,piece):
         delete_url=reverse('DB:delete',args=['Action',action.id])
         html=format_html('<a href="{0}?cont={2}">edit</a><br><a href="{1}?cont={2}">delete</a>',edit_url,delete_url,request.get_full_path())
         if action.action_type.name=='Created': html=''
-        table_data.append([[reverse('DB:action_details',args=[s.name,p.name,action.id]),label],
+        table_data.append([[reverse('DB:action_details', args=[s.id, p.id, action.id]), label],
                           [False,action.date.strftime('%B %d, %Y %I:%M %p')],
                           [False,newlines(action.notes)],
                           [False,html]])
@@ -418,42 +419,37 @@ def piece(request,sample,piece):
                              'sample':s}).flatten()
     return render(request,'sample_database/piece.html',context)
 
-def actionDetails(request,sample,piece,actionID):
+def actionDetails(request, sampleID, pieceID, actionID):
     #Init
     order_by = request.GET.get('order', 'date')
     data_types=Data_Type.objects.all()
-    s = Sample.objects.get(name=sample)
-    p = s.piece_set.get(name=piece)
+    s = Sample.objects.get(id = sampleID)
+    p = s.piece_set.get(id = pieceID)
     a = Action.objects.get(id=actionID)
     title=Title([(reverse('DB:home'),'Home'),
-                 (reverse('DB:sample',args=[s.name]),s.name),
-                 (reverse('DB:piece',args=[s.name,p.name]),p.name)],
+                 (reverse('DB:sample', args=[s.id]), s.name),
+                 (reverse('DB:piece', args=[s.id, p.id]), p.name)],
                 a.action_type.name+' ('+a.date.strftime('%B %d, %Y %I:%M %p')+')')
     error=None
     #Prepare Data
-    field_names=[el for el in a.action_type.field_names.splitlines() if len(el)>0]
+    params = Param_Value_Action.objects.filter(action = a).order_by('param__name')
+    field_names=[el.param.name for el in params]
     field_names.append('Notes')
-    field_data=[el for el in a.fields.splitlines() if len(el)>0]
+    field_data=[el.value for el in params]
     field_data.append(newlines(a.notes))
-    fields=zip(field_names,field_data)
-    data= a.general_set.order_by(order_by)
+    fields=zip(field_names, field_data)
     #On POST
-    if request.method=='POST':
+    if request.method == 'POST':
         #Need to validate form to get data_type; then validate for real
-        form=GeneralDataForm([],request.POST)
+        form = GeneralDataForm([], request.POST)
         form.is_valid()
-        data_type=form.cleaned_data['data_type']
-        POST_fields=[el for el in data_type.field_names.splitlines() if len(el)>0]
+        data_type = Data_Type.objects.get(id = form.cleaned_data['data_type'].id)
+        params = data_type.params.all()
+
         #Generate form for data_type as determined above then actually validate
-        form=GeneralDataForm(POST_fields,request.POST,request.FILES)
+        form = GeneralDataForm(params, request.POST, request.FILES)
         if form.is_valid():
-            data_type=form.cleaned_data['data_type']
-            POST_fields=[el for el in data_type.field_names.splitlines() if len(el)>0]
-            f=''
-            for POST_field in POST_fields:
-                f+=form.cleaned_data[POST_field]+'\r\n'
             new_data=General(data_type=data_type,
-                             fields=f,
                              image_file=form.cleaned_data['image_file'],
                              raw_data=form.cleaned_data['raw_data'],
                              notes=form.cleaned_data['notes'],
@@ -463,9 +459,15 @@ def actionDetails(request,sample,piece,actionID):
                              ymax=form.cleaned_data['ymax'],
                              parent=a)
             new_data.save()
+            
+            for param in params:
+                v = form.cleaned_data['{} ({:d})'.format(param.name, param.id)]
+                param_value = Param_Value_Data(param = param, data = new_data, value = v)
+                param_value.save()
         else:
             error = form.errors
     #Prepare Table
+    data= a.general_set.order_by(order_by)
     datatables = SafeString('''data-order='[[ 1, "desc" ]]' ''')
     table_head=[(200,False,'Type'),
                 ('',True,'Date'),
@@ -476,17 +478,16 @@ def actionDetails(request,sample,piece,actionID):
         edit_url=reverse('DB:edit',args=['General',dat.id])
         delete_url=reverse('DB:delete',args=['General',dat.id])
         html=format_html('<a href="{0}?cont={2}">edit</a><br><a href="{1}?cont={2}">delete</a>',edit_url,delete_url,request.get_full_path())
-        table_data.append([[reverse('DB:general_details',args=[s.name,p.name,dat.id]),format_data_hover(dat,dat.data_type.name)],
+        table_data.append([[reverse('DB:general_details', args=[s.id, p.id, dat.id]), format_data_hover(dat,dat.data_type.name)],
                            [False,dat.date.strftime('%B %d, %I:%M %p')],
                            [False,newlines(dat.notes)],
                            [False,html]])
     table=Table(table_head,table_data)
     #Prepare Form
-    form=[]
+    form = []
     for type in data_types:
-        f = [el for el in type.field_names.splitlines() if len(el)>0]
-        f_temp=GeneralDataForm(f,initial={'data_type':type})
-        form.append([type.name,f_temp])
+        f_temp = GeneralDataForm(type.params.all(), initial={'data_type':type})
+        form.append([type.id, f_temp])
     #Prepare html
     context = RequestContext(request,{'title':title,
                              'table':table,
@@ -501,42 +502,37 @@ def actionDetails(request,sample,piece,actionID):
                              'add_zip':True}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
-def generalDetails(request,sample,piece,generalID):
+def generalDetails(request, sampleID, pieceID, generalID):
     #Init
     order_by = request.GET.get('order', 'date')
     data_types=Data_Type.objects.all()
-    s = Sample.objects.get(name=sample)
-    p = s.piece_set.get(name=piece)
+    s = Sample.objects.get(id = sampleID)
+    p = s.piece_set.get(id = pieceID)
     g = General.objects.get(id=generalID)
     a = g.parent
     title=Title([(reverse('DB:home'),'Home'),
-                 (reverse('DB:sample',args=[s.name]),s.name),
-                 (reverse('DB:piece',args=[s.name,p.name]),p.name),
-                 (reverse('DB:action_details',args=[s.name,p.name,a.id]),a.action_type.name+' ('+a.date.strftime('%B %d, %Y')+')')],
+                 (reverse('DB:sample', args=[s.id]), s.name),
+                 (reverse('DB:piece', args=[s.id, p.id]), p.name),
+                 (reverse('DB:action_details', args=[s.id, p.id, a.id]),a.action_type.name+' ('+a.date.strftime('%B %d, %Y')+')')],
                 g.data_type.name+' ('+g.date.strftime('%I:%M %p')+')')
     error=None
     #Prepare Data
-    field_names=[el for el in g.data_type.field_names.splitlines() if len(el)>0]
+    params = Param_Value_Data.objects.filter(data = g).order_by('param__name')
+    field_names=[el.param.name for el in params]
     field_names+=['xmin','xmax','ymin','ymax','Notes']
-    field_data=[el for el in g.fields.splitlines() if len(el)>0]
+    field_data=[el.value for el in params]
     field_data+=[g.xmin,g.xmax,g.ymin,g.ymax,newlines(g.notes)]
-    fields=zip(field_names,field_data)
-    data= g.local_set.order_by(order_by)
+    fields=zip(field_names, field_data)
     #On POST
     if request.method=='POST':
         form=LocalDataForm([],request.POST,request.FILES)
         form.is_valid()
-        data_type=form.cleaned_data['data_type']
-        POST_fields=[el for el in data_type.field_names.splitlines() if len(el)>0]
-        form=LocalDataForm(POST_fields,request.POST,request.FILES)
+        data_type = Data_Type.objects.get(id = form.cleaned_data['data_type'].id)
+        params = data_type.params.all()
+
+        form=LocalDataForm(params, request.POST, request.FILES)
         if form.is_valid():
-            data_type=form.cleaned_data['data_type']
-            POST_fields=[el for el in data_type.field_names.splitlines() if len(el)>0]
-            f=''
-            for POST_field in POST_fields:
-                f+=form.cleaned_data[POST_field]+'\r\n'
             new_data=Local(data_type=data_type,
-                             fields=f,
                              image_file=form.cleaned_data['image_file'],
                              raw_data=form.cleaned_data['raw_data'],
                              notes=form.cleaned_data['notes'],
@@ -544,9 +540,15 @@ def generalDetails(request,sample,piece,generalID):
                              y=form.cleaned_data['y'],
                              parent=g)
             new_data.save()
+            
+            for param in params:
+                v = form.cleaned_data['{} ({:d})'.format(param.name, param.id)]
+                param_value = Param_Value_Data(param = param, data = new_data, value = v)
+                param_value.save()
         else:
             error=form.errors
     #Prepare Table
+    data= g.local_set.order_by(order_by)
     datatables = SafeString('''data-order='[[ 1, "desc" ]]' ''')
     table_head=[(200,False,'Type'),
                 ('',True,'Time'),
@@ -557,17 +559,17 @@ def generalDetails(request,sample,piece,generalID):
         edit_url=reverse('DB:edit',args=['Local',dat.id])
         delete_url=reverse('DB:delete',args=['Local',dat.id])
         html=format_html('<a href="{0}?cont={2}">edit</a><br><a href="{1}?cont={2}">delete</a>',edit_url,delete_url,request.get_full_path())
-        table_data.append([[reverse('DB:local_details',args=[s.name,p.name,dat.id]),format_data_hover(dat,dat.data_type.name)],
+        table_data.append([[reverse('DB:local_details', args=[s.id, p.id, dat.id]), format_data_hover(dat, dat.data_type.name)],
                            [False,dat.date.strftime('%I:%M %p')],
                            [False,newlines(dat.notes)],
                            [False,html]])
     table=Table(table_head,table_data)
     #Prepare Form
-    form=[]
+    form = []
     for type in data_types:
-        f = [el for el in type.field_names.splitlines() if len(el)>0]
-        f_temp=LocalDataForm(f,initial={'data_type':type})
-        form.append([type.name,f_temp])
+        f_temp = LocalDataForm(type.params.all(), initial={'data_type':type})
+        form.append([type.id, f_temp])
+
     #Prepare html
     context = RequestContext(request,{'title':title,
                              'table':table,
@@ -581,52 +583,53 @@ def generalDetails(request,sample,piece,generalID):
                              'obj':g}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
-def localDetails(request,sample,piece,localID):
+def localDetails(request, sampleID, pieceID, localID):
     #Init
     order_by = request.GET.get('order', 'date')
     data_types=Data_Type.objects.all()
-    s = Sample.objects.get(name=sample)
-    p = s.piece_set.get(name=piece)
+    s = Sample.objects.get(id = sampleID)
+    p = s.piece_set.get(id = pieceID)
     l = Local.objects.get(id=localID)
     g = l.parent
     a = g.parent
     title=Title([(reverse('DB:home'),'Home'),
-                 (reverse('DB:sample',args=[s.name]),s.name),
-                 (reverse('DB:piece',args=[s.name,p.name]),p.name),
-                 (reverse('DB:action_details',args=[s.name,p.name,a.id]),a.action_type.name+' ('+a.date.strftime('%B %d, %Y')+')'),
-                 (reverse('DB:general_details',args=[s.name,p.name,g.id]),g.data_type.name+' ('+g.date.strftime('%I:%M %p')+')')],
+                 (reverse('DB:sample', args=[s.id]), s.name),
+                 (reverse('DB:piece', args=[s.id, p.id]), p.name),
+                 (reverse('DB:action_details',args=[s.id, p.id, a.id]),a.action_type.name+' ('+a.date.strftime('%B %d, %Y')+')'),
+                 (reverse('DB:general_details',args=[s.id, p.id, g.id]),g.data_type.name+' ('+g.date.strftime('%I:%M %p')+')')],
                 l.data_type.name)
     error=None
     #Prepare Data
-    field_names=[el for el in l.data_type.field_names.splitlines() if len(el)>0]
+    params = Param_Value_Data.objects.filter(data = l).order_by('param__name')
+    field_names=[el.param.name for el in params]
     field_names+=['x','y','Notes']
-    field_data=[el for el in l.fields.splitlines() if len(el)>0]
-    field_data+=[l.x,l.y,newlines(l.notes)]
-    fields=zip(field_names,field_data)
-    data= l.local_attachment_set.order_by(order_by)
+    field_data=[el.value for el in params]
+    field_data+=[l.x, l.y, newlines(l.notes)]
+    fields=zip(field_names, field_data)
     #On POST
     if request.method=='POST':
         form=AttachmentForm([],request.POST,request.FILES)
         form.is_valid()
-        data_type=form.cleaned_data['data_type']
-        POST_fields=[el for el in data_type.field_names.splitlines() if len(el)>0]
-        form=AttachmentForm(POST_fields,request.POST,request.FILES)
+        data_type = Data_Type.objects.get(id = form.cleaned_data['data_type'].id)
+        params = data_type.params.all()
+        
+        form = AttachmentForm(params, request.POST, request.FILES)
         if form.is_valid():
-            data_type=form.cleaned_data['data_type']
-            POST_fields=[el for el in data_type.field_names.splitlines() if len(el)>0]
-            f=''
-            for POST_field in POST_fields:
-                f+=form.cleaned_data[POST_field]+'\r\n'
             new_data=Local_Attachment(data_type=data_type,
-                           fields=f,
                            image_file=form.cleaned_data['image_file'],
                            raw_data=form.cleaned_data['raw_data'],
                            notes=form.cleaned_data['notes'],
                            parent=l)
             new_data.save()
+
+            for param in params:
+                v = form.cleaned_data['{} ({:d})'.format(param.name, param.id)]
+                param_value = Param_Value_Data(param = param, data = new_data, value = v)
+                param_value.save()
         else:
             error=form.errors
-    #Prepare Table
+    #Prepare Table 
+    data= l.local_attachment_set.order_by(order_by)
     datatables = SafeString('''data-order='[[ 1, "desc" ]]' ''')
     table_head=[(200,False,'Type'),
                 ('',True,'Date'),
@@ -637,7 +640,7 @@ def localDetails(request,sample,piece,localID):
         edit_url=reverse('DB:edit',args=['Local_Attachment',dat.id])
         delete_url=reverse('DB:delete',args=['Local_Attachment',dat.id])
         html=format_html('<a href="{0}?cont={2}">edit</a><br><a href="{1}?cont={2}">delete</a>',edit_url,delete_url,request.get_full_path())
-        table_data.append([[reverse('DB:attach_details',args=[s.name,p.name,dat.id]),format_data_hover(dat,dat.data_type.name)],
+        table_data.append([[reverse('DB:attach_details', args=[s.id, p.id, dat.id]), format_data_hover(dat,dat.data_type.name)],
                            [False,dat.date.strftime('%B %d, %Y')],
                            [False,newlines(dat.notes)],
                            [False,html]])
@@ -645,9 +648,9 @@ def localDetails(request,sample,piece,localID):
     #Prepare Form
     form=[]
     for type in data_types:
-        f = [el for el in type.field_names.splitlines() if len(el)>0]
-        f_temp=AttachmentForm(f,initial={'data_type':type})
-        form.append([type.name,f_temp])
+        f_temp = AttachmentForm(type.params.all(), initial={'data_type':type})
+        form.append([type.id, f_temp])
+
     #Prepare html
     context = RequestContext(request,{'title':title,
                              'table':table,
@@ -661,29 +664,31 @@ def localDetails(request,sample,piece,localID):
                              'obj':l}).flatten()
     return render(request,'sample_database/Modal_form.html',context)
 
-def attachDetails(request,sample,piece,attachID):
+def attachDetails(request, sampleID, pieceID, attachID):
     #Init
     order_by = request.GET.get('order', 'date')
     data_types=Data_Type.objects.all()
-    s = Sample.objects.get(name=sample)
-    p = s.piece_set.get(name=piece)
+    s = Sample.objects.get(id = sampleID)
+    p = s.piece_set.get(id = pieceID)
     att=Local_Attachment.objects.get(id=attachID)
     l = att.parent
     g = l.parent
     a = g.parent
     title=Title([(reverse('DB:home'),'Home'),
-                 (reverse('DB:sample',args=[s.name]),s.name),
-                 (reverse('DB:piece',args=[s.name,p.name]),p.name),
-                 (reverse('DB:action_details',args=[s.name,p.name,a.id]),a.action_type.name+' ('+a.date.strftime('%B %d, %Y')+')'),
-                 (reverse('DB:general_details',args=[s.name,p.name,g.id]),g.data_type.name+' ('+g.date.strftime('%B %d, %Y')+')'),
-                 (reverse('DB:local_details',args=[s.name,p.name,l.id]),l.data_type.name+' ('+l.date.strftime('%B %d, %Y')+')')],
+                 (reverse('DB:sample', args=[s.id]), s.name),
+                 (reverse('DB:piece', args=[s.id, p.id]), p.name),
+                 (reverse('DB:action_details', args=[s.id, p.id, a.id]), a.action_type.name+' ('+a.date.strftime('%B %d, %Y')+')'),
+                 (reverse('DB:general_details', args=[s.id, p.id, g.id]), g.data_type.name+' ('+g.date.strftime('%B %d, %Y')+')'),
+                 (reverse('DB:local_details', args=[s.id, p.id, l.id]), l.data_type.name+' ('+l.date.strftime('%B %d, %Y')+')')],
                 att.data_type.name+' ('+att.date.strftime('%B %d, %Y')+')')
     #Prepare Data
-    field_names=[el for el in att.data_type.field_names.splitlines() if len(el)>0]
+    params = Param_Value_Data.objects.filter(data = att).order_by('param__name')
+    field_names=[el.param.name for el in params]
     field_names+=['Notes']
-    field_data=[el for el in att.fields.splitlines()]
+    field_data=[el.value for el in params]
     field_data+=[newlines(att.notes)]
-    fields=zip(field_names,field_data)
+    fields=zip(field_names, field_data)
+
     #Prepare html
     context = RequestContext(request,{'title':title,
                              'fields':fields,
@@ -695,19 +700,15 @@ def attachDetails(request,sample,piece,attachID):
 def newAction(request,action_type):
     error=False
     a_type = Action_Type.objects.get(name=action_type)
-    fields = [el for el in a_type.field_names.splitlines() if len(el)>0]
+    params = a_type.params.all()
     if request.method=='POST':
-        form=ActionForm(fields,request.POST)
+        form = ActionForm(params, request.POST)
         if form.is_valid():
-            f=''
             pieces=[]
-            for field in fields:
-                f+=form.cleaned_data[field]+'\r\n'
             for sample in Sample.objects.all():
-                if len(sample.piece_set.all())>0:
-                    pieces+=form.cleaned_data[sample.name]
+                if len(sample.piece_set.all()) > 0:
+                    pieces += form.cleaned_data[sample.name]
             new_action=Action(action_type=a_type,
-                              fields=f,
                               owner=request.user,
                               last_modified_by = request.user,
                               notes=form.cleaned_data['notes'],
@@ -720,11 +721,15 @@ def newAction(request,action_type):
                 error = 'An action requires 1 or more pieces!'
                 context = RequestContext(request,{'error':error,'form':form,'a_type':a_type}).flatten()
                 return render(request,'sample_database/new_action.html',context)
+            for p in params:
+                v = form.cleaned_data['{} ({:d})'.format(p.name, p.id)]
+                param_value = Param_Value_Action(param = p, action = new_action, value = v)
+                param_value.save()
             return redirect('DB:home')
         else:
             error = form.errors
     else:
-        form=ActionForm(fields)
+        form=ActionForm(params)
     # Split form up to properties and samples
     form_props = []
     form_samples = []
@@ -741,29 +746,23 @@ def newAction(request,action_type):
     return render(request,'sample_database/new_action.html',context)
 
 def edit(request,type,id):
-#    prompt="Changes are permanent (under construction)"
-    prompt=''
-    action_types=Action_Type.objects.filter(~Q(name='Created'))
-    editable=['Piece','Sample','Action','General','Local','Local_Attachment','Design','Design_Item','Design_Object_Attachment']
-    error=False
-    obj=False
-    form=''
-    fields=''
+    prompt = ''
+    action_types = Action_Type.objects.filter(~Q(name='Created'))
+    editable = ['Piece','Sample','Action','General','Local','Local_Attachment','Design','Design_Item','Design_Object_Attachment']
+    error = False
+    obj = False
+    form = ''
     if type not in editable:
         error= "%s not editable or does not exist"%type
     else:
-        obj=eval(type+".objects.get(id=%s)"%id)
+        obj = eval(type + ".objects.get(id=%s)"%id)
         obj.last_modified_by = request.user
-        error=isPOST(request,eval("edit_%s"%type),obj)
-        form=eval("edit_%s(instance=obj)"%type)
-        if type == 'Action':
-            fields=[el for el in obj.action_type.field_names.splitlines() if len(el)>0]
-        elif type == 'Sample':
+        error = isPOST(request, eval("edit_%s"%type), obj)
+        form = eval("edit_%s(instance=obj)"%type)
+        
+        if type == 'Sample':
             form.fields["owner"].queryset = User.objects.filter(is_staff=True).order_by('first_name')
-        elif type == 'Design' or type == 'Design_Item' or type == 'Design_Object_Attachment':
-            fields = []
-        elif type != 'Sample' and type != 'Piece':
-            fields=[el for el in obj.data_type.field_names.splitlines() if len(el)>0]
+        
         if not error and request.POST:
             continue_url = request.GET.get('cont')
             if continue_url:
@@ -771,7 +770,6 @@ def edit(request,type,id):
             try: return redirect(obj.url())
             except: pass  # If not url method, just return this form
     context = RequestContext(request,{'obj':obj,
-                                      'obj_fields':fields,
                                       'error':error,
                                       'type':type.replace("_", " "),
                                       'caller':'Edit',
@@ -827,16 +825,16 @@ def delete(request,type,id):
                                       'prompt':SafeString(prompt)}).flatten()
     return render(request,'sample_database/edit.html',context)
 
-def upload_zip(request,type,parent_id):
-    error=False
-    parent = Action.objects.get(id=parent_id)
-    type = Data_Type.objects.get(name=type)
-    prompt='Filenames will go to notes unless a txt file is supplied.  The txt file needs<b> one line per file!!</b>'
+def upload_zip(request, attachID, parent_id):
+    error = False
+    parent = Action.objects.get(id = parent_id)
+    type = Data_Type.objects.get(id = attachID)
+    prompt = 'Filenames will go to notes unless a txt file is supplied. The txt file needs <b>one line per file!</b>'
     if request.method == 'POST':
-        form=ZipForm(type,request.POST,request.FILES)
+        form = ZipForm(type.params.all(), request.POST, request.FILES)
         if form.is_valid():
             NEXT = form.cleaned_data['referrer']
-            out, error = form.save(parent,type)
+            out, error = form.save(parent, type)
             if not error:
                 return redirect(NEXT)
             else:
@@ -844,8 +842,8 @@ def upload_zip(request,type,parent_id):
         else:
             error = form.errors
     NEXT = request.GET.get('next','DB:home')
-    form=ZipForm(type,initial={'referrer':NEXT})
-    context = RequestContext(request,{'parent':parent,
+    form = ZipForm(type.params.all(), initial={'referrer':NEXT})
+    context = RequestContext(request, {'parent':parent,
                                       'type':type,
                                       'error':error,
                                       'form':form,

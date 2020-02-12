@@ -3,9 +3,9 @@
 {% block css %}
 {{ block.super }}
 <style>
-        #id_design_items {
-		                min-height: 300px;
-				        }
+	#id_design_items {
+		min-height: 300px;
+	}
 </style>
 {% endblock css %}
 
@@ -23,28 +23,15 @@ Error with {{caller}}
     <div class="small-12 columns">
         {{prompt}}
     </div>
-    {% if caller == "Edit" and obj_fields|length %}
-    <div class="small-12 columns">
-        <br><br>
-        Field Names:
-        <ul>
-            {% for field in obj_fields %}
-            <li>{{field}}</li>
-            {% empty %}
-            <li>No fields</li>
-            {% endfor %}
-        </ul>
-        If there are fields, simply separate by newline in "Fields."  If a field is to be empty, make sure it still has its own line!
-    </div>
-    {% endif %}
 </div>
 <br><br>
 <div class="row">
     <div class="small-12 columns">
         <form method="post" enctype="multipart/form-data">{% csrf_token %}
         {% for field in edit_form %}
-            {{field.errors}}
-            {{field.label_tag}}{{ field }}<br>
+	    <b>{{field.help_text}}</b>
+	    {{field.label_tag}} {{field}}
+	    {{field.errors}}<br />
         {% endfor %}
             <input type="submit" value="Confirm" />
         </form>

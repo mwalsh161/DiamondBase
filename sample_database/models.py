@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.template.defaultfilters import slugify
 from django.utils import timezone
+from django_enumfield import enum
 import os, datetime, image_util
 
 def user_new_unicode(self):
@@ -144,7 +145,7 @@ class Sample(models.Model):
         return u'%s (%s)'%(self.name,self.location)
 
     def url(self):
-        return reverse('DB:sample',args=[self.name])
+        return reverse('DB:sample',args=[self.id])
 
     def save(self,*args,**kwargs):
         if not self.id:
@@ -197,7 +198,7 @@ class Piece(models.Model):
         return self.__unicode__()
 
     def url(self):
-        return reverse('DB:piece',args=[self.sample.name,self.name])
+        return reverse('DB:piece',args=[self.sample.id, self.id])
     
     def get_maps(self):
         created = self.action_set.filter(action_type__name='Created')
@@ -237,11 +238,34 @@ class Piece(models.Model):
 ####################################################################################
 ####################################################################################
 
+class ParamType(enum.Enum):
+    TEXT = 0
+    INT = 1
+    FLOAT = 2
+
+    __labels__ = {
+        TEXT: "Text",
+        INT: "Integer",
+        FLOAT: "Floating point"
+    }
+
+class Param(models.Model):
+    name = models.CharField(max_length = 50)
+    description = models.CharField(max_length = 5000, blank = True)
+    param_type = enum.EnumField(ParamType, default = ParamType.FLOAT)
+    max_value = models.FloatField(null = True, blank = True)
+    min_value = models.FloatField(null = True, blank = True)
+    default_value = models.FloatField(null = True, blank = True)
+
+    def __str__(self):
+        return self.name
+
 class Action_Type(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
     name = models.CharField(max_length=50,help_text="For example: Create, Experiment, Processing")
-    field_names = models.TextField('Field names',max_length=500,help_text='Fields that will be in all of this type (other than date/notes).  Spearate items by a newline.  Limited to 500 characters.',blank=True)
- 
+    params = models.ManyToManyField(Param, blank = True)
+    notes = models.TextField(max_length=5000, blank = True)
+
     def __str__(self):
         return self.__unicode__()
  
@@ -250,9 +274,8 @@ class Action_Type(models.Model):
         verbose_name='Action Type'
 
     def __unicode__(self):
-        fields = str(self.field_names).splitlines()
-        length = len([el for el in fields if len(el)>0])
-        return u'%s (%s fields)'%(self.name,length)
+        fcount = self.params.all().count()
+        return u'%s (%s field)'%(self.name, fcount) if fcount == 1 else u'%s (%s fields)'%(self.name, fcount)
 
     def url(self):
         return "/admin/sample_database/action_type/%i"%self.id
@@ -265,35 +288,33 @@ class Action_Type(models.Model):
 class Action(models.Model):
     pieces = models.ManyToManyField(Piece)
     action_type = models.ForeignKey(Action_Type, on_delete=models.CASCADE)
-    fields = models.TextField(max_length=500,blank=True)
     date = models.DateTimeField(auto_now_add=False)
     owner = models.ForeignKey(User,null=True,on_delete=models.SET_NULL)
     last_modified_by = models.ForeignKey(User,null=True,related_name='action_edited',on_delete=models.SET_NULL)
-    last_modified = models.DateTimeField(null=True,auto_now=True)
     notes = models.TextField(max_length=5000,blank=True)
     last_modified = models.DateTimeField(auto_now_add=True)   #In Data, upon save, update this field!
 
-    def get(self,prop,cast=str):
-        act = self
-        field_names=act.action_type.field_names.splitlines()
-        i=pos(lambda a: prop.lower() in a.lower(),field_names)
-        if i==None:
-            raise Exception("No property named %s in %s"%(prop, act.action_type.name))
-        field_value=act.fields.splitlines()
-        return cast(field_value[i])
+#    def get(self,prop,cast=str):
+#        act = self
+#        field_names=act.action_type.field_names.splitlines()
+#        i=pos(lambda a: prop.lower() in a.lower(),field_names)
+#        if i==None:
+#            raise Exception("No property named %s in %s"%(prop, act.action_type.name))
+#        field_value=act.fields.splitlines()
+#        return cast(field_value[i])
 
-    def set(self,prop,val,save=False):
-        dat=self
-        field_names=dat.action_type.field_names.splitlines()
-        i=pos(lambda a: prop.lower() in a.lower(),field_names)
-        if i==None:
-            raise Exception("No property named %s in %s"%(prop, dat.action_type.name))
-        field_value=dat.fields.splitlines()
-        field_value[i]=str(val)
-        new_fields = "\r\n".join(field_value)
-        dat.fields = new_fields
-        if save:
-             dat.save()
+#    def set(self,prop,val,save=False):
+#        dat=self
+#        field_names=dat.action_type.field_names.splitlines()
+#        i=pos(lambda a: prop.lower() in a.lower(),field_names)
+#        if i==None:
+#            raise Exception("No property named %s in %s"%(prop, dat.action_type.name))
+#        field_value=dat.fields.splitlines()
+#        field_value[i]=str(val)
+#        new_fields = "\r\n".join(field_value)
+#        dat.fields = new_fields
+#        if save:
+#             dat.save()
 
     def save(self,*args,**kwargs):
         self.last_modified=utcnow()
@@ -304,7 +325,13 @@ class Action(models.Model):
 
     def __str__(self):
         return self.__unicode__()
- 
+
+class Param_Value_Action(models.Model):
+    param = models.ForeignKey(Param, on_delete = models.CASCADE)
+    action = models.ForeignKey(Action, on_delete = models.CASCADE)
+    value = models.CharField(max_length = 100)
+
+
 ####################################################################################
 ####################################################################################
 
@@ -320,15 +347,14 @@ def get_upload_path(instance,filename):
 class Data_Type(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
     name = models.CharField(max_length=50,help_text="For example: SEM, Whitelight, Spectrum, Confocal, Resonant Analysis, Map")
-    field_names = models.TextField('Field names',max_length=500,help_text='Fields that will be in all of this type (other than date/notes).  Spearate items by a newline.  Limited to 500 characters.',blank=True)
+    params = models.ManyToManyField(Param, blank = True)
    
     def __str__(self):
         return self.__unicode__()
 
     def __unicode__(self):
-        fields = str(self.field_names).splitlines()
-        length = len([el for el in fields if len(el)>0])
-        return u'%s (%s fields)'%(self.name,length)
+        fcount = self.params.all().count()
+        return u'%s (%s field)'%(self.name, fcount) if fcount == 1 else u'%s (%s fields)'%(self.name, fcount)
     
     def save(self,*args,**kwargs):
         if not self.id:
@@ -339,34 +365,33 @@ class Data_Type(models.Model):
         verbose_name='Data Type'
 
 class Data(models.Model):
-    data_type = models.ForeignKey(Data_Type,on_delete=models.PROTECT)
-    fields = models.TextField(max_length=500,blank=True)
+    data_type = models.ForeignKey(Data_Type,on_delete=models.CASCADE)
     image_file = models.FileField(upload_to=get_upload_path,blank=True) #image file
     raw_data = models.FileField(upload_to=get_upload_path,blank=True)
     date = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(max_length=5000,blank=True)
 
-    def get(self,prop,cast=str):
-        dat = self
-        field_names=dat.data_type.field_names.splitlines()
-        i=pos(lambda a: prop.lower() in a.lower(),field_names)
-        if i==None:
-            raise Exception("No property named %s in %s"%(prop, dat.data_type.name))
-        field_value=dat.fields.splitlines()
-        return cast(field_value[i])
-
-    def set(self,prop,val,save=False):
-        dat=self
-        field_names=dat.data_type.field_names.splitlines()
-        i=pos(lambda a: prop.lower() in a.lower(),field_names)
-        if i==None:
-            raise Exception("No property named %s in %s"%(prop, dat.data_type.name))
-        field_value=dat.fields.splitlines()
-        field_value[i]=str(val)
-        new_fields = "\r\n".join(field_value)
-        dat.fields = new_fields
-        if save:
-            dat.save()
+#    def get(self,prop,cast=str):
+#        dat = self
+#        field_names=dat.data_type.field_names.splitlines()
+#        i=pos(lambda a: prop.lower() in a.lower(),field_names)
+#        if i==None:
+#            raise Exception("No property named %s in %s"%(prop, dat.data_type.name))
+#        field_value=dat.fields.splitlines()
+#        return cast(field_value[i])
+#
+#    def set(self,prop,val,save=False):
+#        dat=self
+#        field_names=dat.data_type.field_names.splitlines()
+#        i=pos(lambda a: prop.lower() in a.lower(),field_names)
+#        if i==None:
+#            raise Exception("No property named %s in %s"%(prop, dat.data_type.name))
+#        field_value=dat.fields.splitlines()
+#        field_value[i]=str(val)
+#        new_fields = "\r\n".join(field_value)
+#        dat.fields = new_fields
+#        if save:
+#            dat.save()
 
     def get_thumbnail_url(self):
         #Returns thumbnail if exists, otherwise returns regular image
@@ -381,7 +406,7 @@ class Data(models.Model):
     def save(self, *args, **kwargs):
         super(Data, self).save(*args,**kwargs)   #Need to save first so file is uploaded
 
-        if self.image_file.name != None:
+        if self.image_file.name != None and self.image_file.name != '':
             #Convert TIFF formats to PNG (only for image_file)
             im_path = ''
             try:
@@ -411,6 +436,12 @@ class Data(models.Model):
 
     def __str__(self):
         return self.data_type.name
+
+class Param_Value_Data(models.Model):
+    param = models.ForeignKey(Param, on_delete = models.CASCADE)
+    data = models.ForeignKey(Data, on_delete = models.CASCADE)
+    value = models.CharField(max_length = 100)
+
 
 ####################################################################################
 
