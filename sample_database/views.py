@@ -293,7 +293,7 @@ def newSample(request):
             sample = form.save(commit=False)
             sample.last_modified_by = request.user
             sample.save()
-            return redirect('DB:sample', sample = sample.id)
+            return redirect('DB:sample', sampleID = sample.id)
         else:
             error = form.errors
     form=SampleForm()
@@ -432,7 +432,8 @@ def actionDetails(request, sampleID, pieceID, actionID):
                 a.action_type.name+' ('+a.date.strftime('%B %d, %Y %I:%M %p')+')')
     error=None
     #Prepare Data
-    params = Param_Value_Action.objects.filter(action = a).order_by('param__name')
+    EnabledParams = Action_Type.objects.get(id = a.action_type.id).params.all()
+    params = Param_Value_Action.objects.filter(action = a).filter(param__in = EnabledParams).order_by('param__name')
     field_names=[el.param.name for el in params]
     field_names.append('Notes')
     field_data=[el.value for el in params]
@@ -517,7 +518,8 @@ def generalDetails(request, sampleID, pieceID, generalID):
                 g.data_type.name+' ('+g.date.strftime('%I:%M %p')+')')
     error=None
     #Prepare Data
-    params = Param_Value_Data.objects.filter(data = g).order_by('param__name')
+    EnabledParams = Data_Type.objects.get(id = g.data_type.id).params.all()
+    params = Param_Value_Data.objects.filter(data = g).filter(param__in = EnabledParams).order_by('param__name')
     field_names=[el.param.name for el in params]
     field_names+=['xmin','xmax','ymin','ymax','Notes']
     field_data=[el.value for el in params]
@@ -600,7 +602,8 @@ def localDetails(request, sampleID, pieceID, localID):
                 l.data_type.name)
     error=None
     #Prepare Data
-    params = Param_Value_Data.objects.filter(data = l).order_by('param__name')
+    EnabledParams = Data_Type.objects.get(id = l.data_type.id).params.all()
+    params = Param_Value_Data.objects.filter(data = l).filter(param__in = EnabledParams).order_by('param__name')
     field_names=[el.param.name for el in params]
     field_names+=['x','y','Notes']
     field_data=[el.value for el in params]
@@ -682,7 +685,8 @@ def attachDetails(request, sampleID, pieceID, attachID):
                  (reverse('DB:local_details', args=[s.id, p.id, l.id]), l.data_type.name+' ('+l.date.strftime('%B %d, %Y')+')')],
                 att.data_type.name+' ('+att.date.strftime('%B %d, %Y')+')')
     #Prepare Data
-    params = Param_Value_Data.objects.filter(data = att).order_by('param__name')
+    EnabledParams = Data_Type.objects.get(id = att.data_type.id).params.all()
+    params = Param_Value_Data.objects.filter(data = att).filter(param__in = EnabledParams).order_by('param__name')
     field_names=[el.param.name for el in params]
     field_names+=['Notes']
     field_data=[el.value for el in params]

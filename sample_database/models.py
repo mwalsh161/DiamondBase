@@ -263,7 +263,7 @@ class Param(models.Model):
 class Action_Type(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
     name = models.CharField(max_length=50,help_text="For example: Create, Experiment, Processing")
-    params = models.ManyToManyField(Param, blank = True)
+    params = models.ManyToManyField(Param, blank = True, db_table = 'sample_database_action_type_params')
     notes = models.TextField(max_length=5000, blank = True)
 
     def __str__(self):
@@ -347,7 +347,7 @@ def get_upload_path(instance,filename):
 class Data_Type(models.Model):
     slug = models.SlugField(help_text="Appears in URLs")
     name = models.CharField(max_length=50,help_text="For example: SEM, Whitelight, Spectrum, Confocal, Resonant Analysis, Map")
-    params = models.ManyToManyField(Param, blank = True)
+    params = models.ManyToManyField(Param, blank = True, db_table = 'sample_database_data_type_params')
    
     def __str__(self):
         return self.__unicode__()
