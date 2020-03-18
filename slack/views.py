@@ -2,12 +2,15 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseForbidden, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.utils import timezone, dateparse
+from django.utils import timezone
 from django.core.urlresolvers import reverse
 import hmac, hashlib, json, re, traceback, datetime
 
 from slack.models import acidclean, failed_regex_strings
 from sample_database.models import Sample, Action, Action_Type
+
+temp_re = re.compile(r'((?<= )[0-9]*)[ \t]*[C|c]?(elcius)?$') # "$" guarantees only 1 match
+time_re = re.compile(r'([Aa][Tt][ \t]*)?([0-9]+):([0-9]{2})[ \t]*([AaPp][Mm])?') # (at) #(#):## (am/pm)
 
 class ParseError(Exception):
     pass
@@ -26,44 +29,44 @@ def validate_request(request):
 # Slash command config can be found on slack's api page for this app:
 # https://api.slack.com/apps/AHUKANHSQ/slash-commands
 
-def parseacidclean(instructions,user):
+def parseacidclean(instructions,user,fn):
+    # Parse string from end to beginning:
+    # Grab temperature, time, diamonds (in that order) if they exist
+    cropped_instructions = instructions.strip()
     try:
-        # Grab diamonds
-        cropped_instructions = instructions
-        diamonds = []
-        p = re.compile(r'[, ]*?\"(.*)\"') # All things between quotes (grab the ", " if there for cropping)
-        while True:
-            match = p.search(cropped_instructions)
-            if not match: break
-            diamonds += match.group(1).replace('"','').split(',') # Remove quotes
-            span = match.span()
-            cropped_instructions = cropped_instructions[0:span[0]]+cropped_instructions[span[1]:]
-        remaining_diamonds = re.findall(r'^(.*?)(?:(?<!,) |$)',cropped_instructions) # First space without a comma before it
-        if len(remaining_diamonds) > 1: raise ParseError('Too many diamond list matches found!')
-        if remaining_diamonds: # Now len(diamonds)==1 in the if block
-            diamonds += [d.strip() for d in remaining_diamonds[0].split(',') if d.strip()]
-
-        # Grab time and use django's more robust time parser
-        time = re.findall(r'([0-9]*:[0-9]*[ ]?[aApPmM.]*)',instructions) # Two numbers with colon between them and am/pm after or with space between
-        if len(time) > 1: raise ParseError('Too many time matches found!')
-        if time:
-            time_parsed = dateparse.parse_time(time[0])
-            if not time_parsed: raise ParseError('Could not parse time: "%s"'%time)
-            time = datetime.datetime.combine(datetime.date.today(),time_parsed)
-            time.replace(tzinfo=timezone.get_current_timezone())
-        else:
-            time = timezone.now()
-
-        # Grab temp if it is there
-        temp = re.findall(r'((?<= )[0-9]*)[ ]?[C|c]?$',instructions) # Last number only if space before it
-        if len(temp) > 1: raise ParseError('Too many temperature matches found!')
-        if temp: # Keep consistent format
+        # Grab temp if it is there (guaranteed only 1)
+        temp = temp_re.search(cropped_instructions)
+        if temp: # Remember, two groups defined above; we care about first only
+            # Crop string and grab temp
+            cropped_instructions = cropped_instructions[0:temp.start()].strip()
+            temp = temp.groups()
             try:
                 temp = float(temp[0])
             except:
                 raise ParseError('Failed to convert temperature "%s" to float'%temp[0])
         else:
             temp = None
+
+        time = time_re.findall(cropped_instructions)
+        if len(time) > 1: raise ParseError('Found multiple times in instructions: %s'%(', '.join([''.join(t) for t in time])),)
+        # Now go through again with search
+        time = time_re.search(cropped_instructions) # Could still be empty
+        if time:
+            cropped_instructions = cropped_instructions[0:time.start()].strip()
+            time = time.groups() # This should be (at, ##, ##, None) or (None, ##, ##, 'am/pm')
+            if time[3] and time[3].lower() == 'pm': # Then am/pm specified; add 12 hours if PM
+                time = [int(time[1])+12, int(time[2])] # hours + 12, minutes
+            else:
+                time = [int(time[1]), int(time[2])] # hours, minutes (either AM or 24 hour)
+            time = datetime.time(*time)
+            time = datetime.datetime.combine(datetime.date.today(),time)
+            time = timezone.make_aware(time)
+        else:
+            time = timezone.now()
+
+        # Grab diamonds - should be everything left comma delimited
+        diamonds = cropped_instructions.split(',')
+        diamonds = [d.strip() for d in diamonds if d.strip()]
 
         # Last thing is to swap diamonds strings to sample_database.models.Sample objects
         try:
@@ -72,13 +75,13 @@ def parseacidclean(instructions,user):
         except Sample.DoesNotExist:
             raise Exception('Failed to find "%s" in diamondbase Samples'%sample)
     except:
-        failed_regex_strings(string=instructions,user=user,error=traceback.format_exc()).save()
+        failed_regex_strings(string=fn+' '+instructions,user=user,error=traceback.format_exc()).save()
         raise
     return diamonds, time, temp
 
 def in_acid(instructions,user,request):
     # Usage Hint: dmd1, dmd2 [at 12:45 PM]; 465 C
-    [diamonds, time, temp] = parseacidclean(instructions,user)
+    [diamonds, time, temp] = parseacidclean(instructions,user,'in-acid')
     if not temp: raise Exception('You need to specify a temperature too!')
     clean = acidclean(temperature = temp, start_time = time,
                     issued_start_user = user, issued_start_time = timezone.now())
@@ -101,7 +104,7 @@ def in_acid(instructions,user,request):
 
 def out_acid(instructions,user,request):
     # Usage Hint: [dmd1, dmd2] [at 12:45 PM]
-    [diamonds, time, temp] = parseacidclean(instructions,user)
+    [diamonds, time, temp] = parseacidclean(instructions,user,'out-acid')
     cleans = acidclean.objects.filter(processed=False).order_by('-issued_start_time')
     if diamonds: # Get entry by diamonds (not sure if you can search on manytomany field)
         found = False
