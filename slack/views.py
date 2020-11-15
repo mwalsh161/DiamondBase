@@ -9,7 +9,7 @@ import hmac, hashlib, json, re, traceback, datetime
 from slack.models import acidclean, failed_regex_strings
 from sample_database.models import Sample, Action, Action_Type
 
-temp_re = re.compile(r'((?<= )[0-9]*)[ \t]*[C|c]?(elcius)?$') # "$" guarantees only 1 match
+temp_re = re.compile(r'([Aa][Tt][ \t]*)?((?<= )[0-9]*)[ \t]*[C|c]?(elcius)?$') # "$" guarantees only 1 match
 time_re = re.compile(r'([Aa][Tt][ \t]*)?([0-9]+):([0-9]{2})[ \t]*([AaPp][Mm])?') # (at) #(#):## (am/pm)
 
 class ParseError(Exception):
