@@ -1,6 +1,6 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from slack import views
 
-urlpatterns = patterns('',
+urlpatterns = [
            url(r'^acidclean/$',views.slash_acidclean, name='acidclean'),
-        )
+]

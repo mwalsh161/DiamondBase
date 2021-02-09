@@ -45,38 +45,60 @@ INSTALLED_APPS = (
     'foundation',
     'slack',
     'about',
-    'custom_middleware'
+    'login_required'
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'login_required.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'custom_middleware.middleware.LoginRequiredMiddleware',
 )
-TEMPLATE_CONTEXT_PROCESSORS=("django.contrib.auth.context_processors.auth",
-                             "django.core.context_processors.debug",
-                             "django.core.context_processors.i18n",
-                             "django.core.context_processors.media",
-                             "django.core.context_processors.static",
-                             "django.core.context_processors.tz",
-                             "django.contrib.messages.context_processors.messages",
-                             "django.core.context_processors.request",
-                             "sample_database.context_processors.action_types",
-                             "sample_database.context_processors.lab_name")
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                 "django.contrib.auth.context_processors.auth",
+                 "django.template.context_processors.debug",
+                 "django.template.context_processors.i18n",
+                 "django.template.context_processors.media",
+                 "django.template.context_processors.static",
+                 "django.template.context_processors.tz",
+                 "django.contrib.messages.context_processors.messages",
+                 "django.template.context_processors.request",
+                 "sample_database.context_processors.action_types",
+                 "sample_database.context_processors.lab_name"
+            ],
+        },
+    },
+]
 
 ROOT_URLCONF = 'DiamondBase.urls'
 
 WSGI_APPLICATION = 'DiamondBase.wsgi.application'
+
+LOGIN_URL = '/login/'
 
 LOGIN_URL_NAME = 'login'
 
 LOGIN_EXEMPT_URLS = (
     r'^slack/',
 )
+
+LOGIN_REDIRECT_URL = '/'
+
+LOGOUT_REDIRECT_URL = '/'
+
+LOGIN_REQUIRED_IGNORE_VIEW_NAMES = [
+    'login',
+    'logout'
+]
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
@@ -92,6 +114,9 @@ LANGUAGE_CODE = 'en-us'
 
 USE_TZ = True
 
+USE_I18N = False
+
+#USE_L10N = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
@@ -101,3 +126,4 @@ MEDIA_URL = '/media/'
 # MEDIA_ROOT defined in .env
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT_PATH, 'static/')
+#STATICFILES_DIRS = (os.path.join(PROJECT_ROOT_PATH, 'static/'),)

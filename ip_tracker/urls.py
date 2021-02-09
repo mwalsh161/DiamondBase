@@ -1,8 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from ip_tracker import views
 
-urlpatterns = patterns('',
+urlpatterns = [
            url(r'^$', views.index, name='home'),
-            )
+]
 

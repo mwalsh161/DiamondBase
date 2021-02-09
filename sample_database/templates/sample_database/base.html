@@ -3,12 +3,21 @@
 {% block body_js %}
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/zf/dt-1.10.12/b-colvis-1.2.2/datatables.min.css"/>
 <script type="text/javascript" src="https://cdn.datatables.net/v/zf/dt-1.10.12/b-colvis-1.2.2/datatables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css"/>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
 <script type="text/javascript" class="init">
 $(document).ready(function() {
     $('#main_table').DataTable({
         iDisplayLength:25
     });
 } );
+</script>
+<script type="text/javascript">
+	$('#id_date').datetimepicker({
+		        format:'Y-m-d H:i:00',
+		        inline:false,
+		        lang:'en'
+	});
 </script>
 {% endblock body_js %}
 

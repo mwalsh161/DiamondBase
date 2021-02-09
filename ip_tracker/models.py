@@ -1,5 +1,5 @@
 from django.db import models
-from django.core import urlresolvers
+#from django.core import urlresolvers
 from django.utils import timezone
 import os, datetime
 
@@ -12,6 +12,9 @@ class Computer(models.Model):
 
     def __unicode__(self):
         return u'%s: %s'%(self.name,self.ip)
+
+    def __str__(self):
+        return self.__unicode__()
 
     def save(self,*args,**kwargs):
         self.date_modified=timezone.now()

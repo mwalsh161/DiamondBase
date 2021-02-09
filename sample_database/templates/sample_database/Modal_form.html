@@ -21,15 +21,23 @@
 {% endblock extra_line %}
 
 {% block helper_divs %}
-{% for type_name, form in modal_form %}
+{% for type_id, form in modal_form %}
 <div id="Modal{{forloop.counter}}" class="reveal-modal" data-reveal>
     <h4>{{type_name}}</h4>
     {% if add_zip %}
-    <p align="right"><a href="{% url "DB:upload_zip" type_name action.id %}?next={{ request.path }}">Add Zip File</a></p>
+    <p align="right"><a href="{% url "DB:upload_zip" type_id action.id %}?next={{ request.path }}">Add Zip File</a></p>
     {% endif %}
     <hr>
     <form action="#" method="POST" enctype="multipart/form-data">{% csrf_token %}
-        {{form}}
+	{% for field in form %}
+	    {% if not field.is_hidden %}
+	        <b>{{field.help_text}}</b>
+		{{field.label_tag}} {{field}}
+		{{field.errors}}
+            {% else %}
+	        {{field}}
+	    {% endif %}
+        {% endfor %}
         <input type="submit" value="Submit"/>
     </form>
 </div>

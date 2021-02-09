@@ -1,6 +1,6 @@
 from sample_database.models import *
 from django.contrib import admin
-from django.core import urlresolvers
+#from django.core import urlresolvers
 from django.contrib.auth.models import User
 
 #Hide slug fields
@@ -29,3 +29,4 @@ admin.site.register(Sample,SampleAdmin)
 admin.site.register(Location,NoSlug)
 admin.site.register(Substrate,NoSlug)
 admin.site.register(Project,ProjectAdmin)
+admin.site.register(Param)

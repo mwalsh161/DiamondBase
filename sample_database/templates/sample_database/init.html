@@ -2,6 +2,18 @@
 {% load static %}
 {% block title %}{{LAB_NAME}} Database{% endblock title %}
 
+{% block body_js %}
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.min.css"/>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
+<script type="text/javascript">
+$('#id_date').datetimepicker({
+	format:'Y-m-d H:i:00',
+	inline:false,
+	lang:'en'
+});
+</script>
+{% endblock body_js %}
+
 {% block base_body %}
     <nav class="top-bar" data-topbar>
         <ul class="title-area">
@@ -10,6 +22,15 @@
             </li>
             <li class="toggle-topbar menu-icon"><a href="#"></a></li>
         </ul>
+
+	<section class="top-bar-section">
+            <ul>
+                <li class="divider"></li>
+                <li>
+                    <a>Logged in as <i>{{user}}</i></a>
+                </li>
+            </ul>
+        </section>
         
         <section class="top-bar-section">
             <ul class="right">
@@ -26,13 +47,24 @@
                 <li>
                     <a href={% url 'DB:new_sample' %}>New Sample</a>
                 </li>
-                <li>
+                <li class="has-dropdown">
+                    <a href="#" class="">Sample Designs</a>
+                    <ul class="dropdown">
+                        <li><a href="{% url 'DB:design' %}">Designs</a></li>
+			<li><a href="{% url 'DB:design_item' %}">Design Items</a></li>
+                    </ul>
+                </li>
+                <!--<li>
                     <a href="{% url 'IP:home' %}">IP Tracker</a>
-                </li>
-                <li>
-                    <a href={% url 'about:index' %} target="_blank">About</a>
-                </li>
+		</li>-->
                 <li class="divider"></li>
+		<li>
+		    <a href="/pwchange">Change Password</a>
+		</li>
+		<li>
+		    <a href="/logout">Logout</a>
+		</li>
+		<li class="divider"></li>
                 <li class="has-form">
                     <a href="/admin/" class="tiny button" target="_blank">Admin</a>
                 </li>
@@ -57,7 +89,6 @@
     {% block details %}{% endblock details %}
     {% block search %}{% endblock search %}
     {% block content %}{% endblock content %}
-<br><br><p>Logged in as {{user}}</p>
 
 {% block helper_divs %}{% endblock helper_divs %}
 
