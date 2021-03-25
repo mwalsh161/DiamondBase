@@ -41,7 +41,7 @@ def parseacidclean(instructions,user,fn):
             cropped_instructions = cropped_instructions[0:temp.start()].strip()
             temp = temp.groups()
             try:
-                temp = float(temp[0])
+                temp = float(temp[1])
             except:
                 raise ParseError('Failed to convert temperature "%s" to float'%temp[0])
         else:
